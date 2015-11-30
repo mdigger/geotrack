@@ -52,13 +52,13 @@ func (p *Point) Geo() *GeoObject {
 }
 
 const (
-	erath_radius = 6378137.0 // радиус Земли в метрах
+	EarthRadius float64 = 6378137.0 // радиус Земли в метрах
 )
 
 // Move возвращает новую точку, перемещенную от изначально на dist метрах в направлении bearing
 // в градусах.
 func (p *Point) Move(dist float64, bearing float64) *Point {
-	dr := dist / erath_radius
+	dr := dist / EarthRadius
 	bearing = bearing * math.Pi / 180.0
 	lon1 := p.Longitude() * math.Pi / 180.0
 	lat1 := p.Latitude() * math.Pi / 180.0
@@ -96,5 +96,5 @@ func (p *Point) Distance(p2 *Point) float64 {
 	a2 := math.Sin(dLon/2) * math.Sin(dLon/2) * math.Cos(lat1) * math.Cos(lat2)
 	a := a1 + a2
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
-	return erath_radius * c
+	return EarthRadius * c
 }

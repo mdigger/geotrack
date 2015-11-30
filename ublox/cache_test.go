@@ -1,8 +1,6 @@
 package ublox
 
 import (
-	"encoding/json"
-	"fmt"
 	"log"
 	"testing"
 
@@ -21,20 +19,20 @@ func TestCache(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	data, err := cache.Get(pointWork, DefaultProfile)
+	data, err := cache.Get(pointHome, DefaultProfile)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// fmt.Println(data)
-	data, err = cache.Get(pointHome, DefaultProfile)
+	data, err = cache.Get(pointWork, DefaultProfile)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// fmt.Println(data)
 	_ = data
-	jsondata, err := json.Marshal(data)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println("json:", string(jsondata))
+	// jsondata, err := json.Marshal(data)
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// fmt.Println("json:", string(jsondata))
 }

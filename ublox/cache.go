@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	CollectionName = "ublox"                         // название коллекции
-	ExpireAfter    = time.Duration(time.Minute * 30) // время жизни элемента кеша
-	MaxDistance    = 100000                          // дистанция в метрах для выборки
+	CollectionName         = "ublox"                         // название коллекции
+	ExpireAfter            = time.Duration(time.Minute * 30) // время жизни элемента кеша
+	MaxDistance    float64 = 100000.0 / geo.EarthRadius      // дистанция в радианах (метры на радиус Земли)
 )
 
 // Cache описывает кеш ответов сервера U-blox с эфемеридами.
@@ -48,10 +48,10 @@ func InitCache(mdb *mongo.DB, token string) (cache *Cache, err error) {
 
 // storeData описывает формат данных для хранения.
 type storeData struct {
-	*Profile                // профиль
-	Point    *geo.GeoObject // координаты
-	Data     []byte         // содержимое ответа
-	Time     time.Time      // временная метка
+	*Profile           // профиль
+	Point    geo.Point // координаты
+	Data     []byte    // содержимое ответа
+	Time     time.Time // временная метка
 }
 
 // Get возвращает данные эфемерид для указанной точки. Данные возвращаются из кеша, если
@@ -63,15 +63,16 @@ func (c *Cache) Get(point *geo.Point, profile *Profile) (data []byte, err error)
 	var cacheData struct {
 		Data []byte
 	}
-	err = coll.Find(bson.M{
+	search := bson.M{
 		"profile": profile,
 		"point": bson.M{
-			"$near":        point.Geo(),
+			"$nearSphere":  point,
 			"$maxDistance": MaxDistance,
-		}}).Select(bson.M{"data": 1, "_id": 0}).One(&cacheData)
-	// if err != mgo.ErrNotFound {
+		}}
+	err = coll.Find(search).Select(bson.M{"data": 1, "_id": 0}).One(&cacheData)
 	switch err {
 	case nil: // данные получены из кеша
+		log.Printf("UBLOX: %v from cache", point)
 		data = cacheData.Data
 		return
 	case mgo.ErrNotFound: // данные в кеше не найдены - запрашиваем у сервера
@@ -86,7 +87,7 @@ func (c *Cache) Get(point *geo.Point, profile *Profile) (data []byte, err error)
 	// сохраняем ответ в хранилище
 	err = coll.Insert(&storeData{
 		Profile: profile,
-		Point:   point.Geo(),
+		Point:   *point,
 		Data:    data,
 		Time:    time.Now(),
 	})
