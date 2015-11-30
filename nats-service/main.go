@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"os/signal"
@@ -21,9 +22,16 @@ const (
 	serviceNameIMEI   = "imei"
 )
 
+var ubloxToken = "I6KKO4RU_U2DclBM9GVyrA"
+
 func main() {
+	mongoURL := flag.String("mongodb", "mongodb://localhost/watch", "MongoDB connection URL")
+	natsURL := flag.String("nats", nats.DefaultURL, "NATS connection URL")
+	flag.StringVar(&ubloxToken, "ublox", ubloxToken, "U-Blox token")
+	flag.Parse()
+
 	log.Print("Connecting to MongoDB...")
-	mdb, err := mongo.Connect("mongodb://localhost/watch")
+	mdb, err := mongo.Connect(*mongoURL)
 	if err != nil {
 		log.Println("Error connecting to MongoDB:", err)
 		return
@@ -31,7 +39,7 @@ func main() {
 	defer mdb.Close()
 
 	log.Println("Connecting to NATS...")
-	nc, err := nats.DefaultOptions.Connect()
+	nc, err := nats.Connect(*natsURL)
 	if err != nil {
 		log.Println("Error connecting to NATS:", err)
 		return
@@ -74,7 +82,7 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 	})
 
 	log.Println("Initializing UBLOX subscription...")
-	ubloxCache, err := ublox.InitCache(mdb, "I6KKO4RU_U2DclBM9GVyrA")
+	ubloxCache, err := ublox.InitCache(mdb, ubloxToken)
 	if err != nil {
 		return err
 	}

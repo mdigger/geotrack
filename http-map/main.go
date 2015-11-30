@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"html/template"
 	"io"
 	"log"
@@ -28,7 +29,10 @@ func (t *Template) Render(w io.Writer, name string, data interface{}) error {
 }
 
 func main() {
-	mdb, err := mongo.Connect("mongodb://localhost/watch")
+	mongoURL := flag.String("mongodb", "mongodb://localhost/watch", "MongoDB connection URL")
+	flag.Parse()
+
+	mdb, err := mongo.Connect(*mongoURL)
 	if err != nil {
 		log.Println("Error connecting to MongoDB:", err)
 		return
