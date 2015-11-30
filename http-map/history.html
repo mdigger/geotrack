@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Карта</title>
+  <meta charset="utf-8" />
+  <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
+  <style>
+    html, body, #map {
+        width: 100%; height: 100%; padding: 0; margin: 0;
+    }
+  </style>
+  <script type="text/javascript">
+    ymaps.ready(init);
+    function init() {
+      var myMap = new ymaps.Map("map", {
+        center: {{if .}}{{with index . 0}}{{.Point}}{{end}}{{else}}[55.715084,37.57351]{{end}},
+        zoom: 16,
+        controls: ['zoomControl', 'typeSelector']
+      });
+      {{if .}}var myPolyline = new ymaps.Polyline([{{range .}}
+        {{.Point}},{{end}}
+      ]);
+      myMap.geoObjects.add(myPolyline);
+      var data = {
+        type: "FeatureCollection",
+        features: [{{ range $index, $element := . }}
+          {type: "Feature", id: "{{$element.ID.Hex}}", 
+           geometry: {type: "Point", coordinates: {{$element.Point}}}, 
+           properties: {
+             balloonContent: "<table>"+
+                "<tr><td>Date:</td><td>{{$element.Time}}</td></tr>"+
+                "<tr><td>Point:</td><td>{{$element.Point}}</td></tr>"+
+                "<tr><td>ID:</td><td>{{$element.ID.Hex}}</td></tr>"+
+                "</table>", 
+             clusterCaption: "# {{$index}}", 
+             hintContent: "{{$element.Time}}"
+          }},{{end}}
+        ]
+      };
+      var objectManager = new ymaps.ObjectManager({clusterize: true});
+      objectManager.add(data);
+      myMap.geoObjects.add(objectManager);
+      myMap.setBounds(myMap.geoObjects.getBounds(), {checkZoomRange: true});{{end}}
+      myMap.copyrights.add('mdigger');
+    }
+  </script>
+</head>
+<body>
+  <div id="map"></div>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Карта</title>
+  <meta charset="utf-8" />
+  <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
+  <style>
+    html, body, #map {
+        width: 100%; height: 100%; padding: 0; margin: 0;
+    }
+  </style>
+  <script type="text/javascript">
+    ymaps.ready(init);
+    function init() {
+      var myMap = new ymaps.Map("map", {
+        center: {{.Point}},
+        zoom: 16,
+        controls: ['zoomControl', 'typeSelector']
+      });  
+      var myPlacemark = new ymaps.Placemark({{.Point}},
+        {
+          hintContent: "{{.Time}}",
+          balloonContent: "<table>"+
+                "<tr><td>Date:</td><td>{{.Time}}</td></tr>"+
+                "<tr><td>Point:</td><td>{{.Point}}</td></tr>"+
+                "<tr><td>ID:</td><td>{{.ID.Hex}}</td></tr>"+
+                "</table>",
+          clusterCaption: "Last Point"
+        });
+      myMap.geoObjects.add(myPlacemark);
+      myMap.setBounds(myMap.geoObjects.getBounds(), {checkZoomRange: true});
+      myMap.copyrights.add('mdigger');
+    }
+  </script>
+</head>
+<body>
+  <div id="map"></div>
+</body>
+</html>
