@@ -30,6 +30,7 @@ func (t *Template) Render(w io.Writer, name string, data interface{}) error {
 
 func main() {
 	mongoURL := flag.String("mongodb", "mongodb://localhost/watch", "MongoDB connection URL")
+	addr := flag.String("http", ":8080", "Server address & port")
 	flag.Parse()
 
 	mdb, err := mongo.Connect(*mongoURL)
@@ -55,7 +56,7 @@ func main() {
 	e.Get("/", index)
 	e.Get("/:deviceid", current)
 	e.Get("/:deviceid/history", history)
-	e.Run(":8080")
+	e.Run(*addr)
 }
 
 func index(c *echo.Context) error {
