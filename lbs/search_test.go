@@ -21,9 +21,11 @@ func TestSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	point, err := lbs.SearchLBS(reqStr)
-	if err != nil {
-		t.Fatal(err)
+	for _, s := range strs {
+		point, err := lbs.SearchLBS(s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Println(point)
 	}
-	fmt.Println(point)
 }
