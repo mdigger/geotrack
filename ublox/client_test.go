@@ -9,8 +9,8 @@ import (
 
 var (
 	token     = "I6KKO4RU_U2DclBM9GVyrA"
-	pointWork = geo.NewPoint(55.715084, 37.57351)  // работа
-	pointHome = geo.NewPoint(55.765944, 37.589248) // дом
+	pointWork = geo.NewPoint(37.57351, 55.715084)  // работа
+	pointHome = geo.NewPoint(37.589248, 55.765944) // дом
 )
 
 func TestClient(t *testing.T) {

@@ -40,8 +40,8 @@ func (p *Point) String() string {
 	return fmt.Sprintf("[%f,%f]", p.Longitude(), p.Latitude())
 }
 
-// GeoPoint возвращает представление точки в формате GeoJSON.
-func (p *Point) GeoPoint() interface{} {
+// Geo возвращает представление точки в формате GeoJSON.
+func (p *Point) Geo() interface{} {
 	if p == nil {
 		return nil
 	}
@@ -54,30 +54,30 @@ func (p *Point) GeoPoint() interface{} {
 	}
 }
 
-// GeoPolygon возвращает представление окружности с центорм в данной точке в виде полигона
-// в формате GeoJSON.
-//
-// Все эти извращения нужны только для того, чтобы нормально работали поисковые индексы в MongoDB,
-// по той простой причине, что Mongo позволяет сохранять только объекты в формате GeoJSON, а те
-// умники, которые разрабатывали данный стандарт, решили, что круг — это абсолютно лишняя
-// сущность, которая не вписывается в их мироощущение.
-func (p *Point) GeoPolygon(radius float64) interface{} {
-	if p == nil || radius <= 0 {
-		return nil
-	}
-	const count = 12
-	coords := make([][]float64, count+1)
-	for i := range coords {
-		coords[i] = p.Move(radius, 360.0/float64(count)*float64(i))[:]
-	}
-	return &struct {
-		Type        string
-		Coordinates [][]float64
-	}{
-		Type:        "Polygon",
-		Coordinates: coords,
-	}
-}
+// // GeoPolygon возвращает представление окружности с центорм в данной точке в виде полигона
+// // в формате GeoJSON.
+// //
+// // Все эти извращения нужны только для того, чтобы нормально работали поисковые индексы в MongoDB,
+// // по той простой причине, что Mongo позволяет сохранять только объекты в формате GeoJSON, а те
+// // умники, которые разрабатывали данный стандарт, решили, что круг — это абсолютно лишняя
+// // сущность, которая не вписывается в их мироощущение.
+// func (p *Point) GeoPolygon(radius float64) interface{} {
+// 	if p == nil || radius <= 0 {
+// 		return nil
+// 	}
+// 	const count = 12
+// 	coords := make([][]float64, count+1)
+// 	for i := range coords {
+// 		coords[i] = p.Move(radius, 360.0/float64(count)*float64(i))[:]
+// 	}
+// 	return &struct {
+// 		Type        string
+// 		Coordinates [][]float64
+// 	}{
+// 		Type:        "Polygon",
+// 		Coordinates: coords,
+// 	}
+// }
 
 const (
 	EarthRadius float64 = 6378137.0 // радиус Земли в метрах
