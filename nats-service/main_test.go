@@ -41,7 +41,12 @@ func TestSubscription(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	timemout := 10 * time.Second
+	var (
+		timemout = 10 * time.Second
+		point    = geo.NewPoint(55.715084, 37.57351)
+		deviceID = "test0123456789"
+		groupID  = users.SampleGroupID
+	)
 	{
 		fmt.Println("LBS Request")
 		var data *geo.Point
@@ -56,31 +61,34 @@ func TestSubscription(t *testing.T) {
 	{
 		fmt.Println("UBLOX Request")
 		var data []byte
-		err = nce.Request(serviceNameUblox, geo.NewPoint(37.712766, 55.735922), &data, timemout)
+		err = nce.Request(serviceNameUblox, point, &data, timemout)
 		if err != nil {
 			t.Fatal(err)
 		}
 		fmt.Printf("UBLOX Response: %d data length\n", len(data))
 	}
 	{
+		fmt.Println("IMEI Request")
+		var data users.GroupInfo
+		err = nce.Request(serviceNameIMEI, deviceID, &data, timemout)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Printf("IMEI Response: %v\n", data)
+		groupID = data.GroupID
+	}
+	{
 		fmt.Println("TRACK publish")
 		var data = &tracks.TrackData{
-			DeviceID: "12345678901234",
+			GroupID:  groupID,
+			DeviceID: deviceID,
 			Time:     time.Now(),
-			Point:    geo.NewPoint(37.712766, 55.735922),
+			Point:    point,
 		}
 		err = nce.Publish(serviceNameTracks, data)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
-	{
-		fmt.Println("IMEI Request")
-		var data users.GroupInfo
-		err = nce.Request(serviceNameIMEI, "12345678901234", &data, timemout)
-		if err != nil {
-			t.Fatal(err)
-		}
-		fmt.Printf("IMEI Response: %v\n", data)
-	}
+	time.Sleep(time.Second * 2) // ожидаем обработки, иначе не успеет
 }

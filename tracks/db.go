@@ -38,11 +38,11 @@ func InitDB(mdb *mongo.DB) (db *DB, err error) {
 	defer mdb.FreeCollection(coll)
 	// ключ для выборки треков по идентификатору устройства
 	// используется для получения списка треков для конкретного устройства
-	if err = coll.EnsureIndexKey("deviceid", "-_id"); err != nil {
+	if err = coll.EnsureIndexKey("groupid", "deviceid", "-_id"); err != nil {
 		return
 	}
 	// ключ для выборки треков по идентификатору устройства и времени
-	if err = coll.EnsureIndexKey("deviceid", "time", "-_id"); err != nil {
+	if err = coll.EnsureIndexKey("groupid", "deviceid", "time", "-_id"); err != nil {
 		return
 	}
 	// ключ для автоматического удаления устаревших записей трекинга устройств
@@ -57,6 +57,7 @@ func InitDB(mdb *mongo.DB) (db *DB, err error) {
 
 // TrackData описывает входящий формат данных трекинга.
 type TrackData struct {
+	GroupID  string     // идентификатор группы
 	DeviceID string     // уникальный идентификатор устройства
 	Time     time.Time  // временная метка
 	Point    *geo.Point // координаты точки
@@ -79,18 +80,25 @@ type Track struct {
 	Point geo.Point     // координаты точки
 }
 
+// selector описывает список выбираемых полей
+var selector = bson.M{"time": 1, "point": 1}
+
 // Get возвращает список треков для указанного устройства.
 //
 // Метод поддерживает разбиение результатов на отдельные блоки: limit указывает максимальное
 // количество отдаваемых в ответ данных, а lastID — идентификатор последнего полученного трека.
-func (db *DB) Get(deviceID string, limit int, lastID bson.ObjectId) (tracks []*Track, err error) {
+func (db *DB) Get(deviceID, groupID string, limit int, lastID bson.ObjectId) (tracks []*Track, err error) {
 	coll := db.GetCollection(CollectionName)
-	var search = bson.M{"deviceid": deviceID} // ищем все треки с указанного устройства
+	// ищем все треки с указанного устройства
+	var search = bson.M{
+		"groupid":  groupID,
+		"deviceid": deviceID,
+	}
 	if lastID.Valid() {
 		search["_id"] = bson.M{"$lt": lastID} // старее последнего полученного идентификатора
 	}
 	// используем обратную сортировку: свежие записи должны идти раньше более старых
-	query := coll.Find(search).Select(bson.M{"deviceid": 0}).Sort("-$natural")
+	query := coll.Find(search).Select(selector).Sort("-$natural")
 	if limit > 0 {
 		query.Limit(limit)                // ограничиваем количество запрашиваемых данных
 		tracks = make([]*Track, 0, limit) // мы заранее знаем максимальное количество записей
@@ -103,15 +111,16 @@ func (db *DB) Get(deviceID string, limit int, lastID bson.ObjectId) (tracks []*T
 }
 
 // GetDay возвращает список треков для указанного устройства за последние сутки.
-func (db *DB) GetDay(deviceID string) (tracks []*Track, err error) {
+func (db *DB) GetDay(groupID, deviceID string) (tracks []*Track, err error) {
 	coll := db.GetCollection(CollectionName)
 	// ищем все треки с указанного устройства за последние сутки
 	var search = bson.M{
+		"groupid":  groupID,
 		"deviceid": deviceID,
 		"time":     bson.M{"$gt": time.Now().Add(-24 * time.Hour)},
 	}
 	// используем обратную сортировку: свежие записи должны идти раньше более старых
-	query := coll.Find(search).Select(bson.M{"deviceid": 0}).Sort("-$natural")
+	query := coll.Find(search).Select(selector).Sort("-$natural")
 	tracks = make([]*Track, 0)
 	err = query.All(&tracks)
 	db.FreeCollection(coll)
@@ -120,21 +129,24 @@ func (db *DB) GetDay(deviceID string) (tracks []*Track, err error) {
 
 // GetLast возвращает самый последний трек для данного устройства, сохраненный
 // в хранилище.
-func (db *DB) GetLast(deviceID string) (track *Track, err error) {
+func (db *DB) GetLast(groupID, deviceID string) (track *Track, err error) {
 	coll := db.GetCollection(CollectionName)
 	track = new(Track)
-	err = coll.Find(bson.M{"deviceid": deviceID}).
-		Select(bson.M{"deviceid": 0}).Sort("-$natural").One(track)
+	var search = bson.M{
+		"groupid":  groupID,
+		"deviceid": deviceID,
+	}
+	err = coll.Find(search).Select(selector).Sort("-$natural").One(track)
 	db.FreeCollection(coll)
 	return
 }
 
 // GetDevicesID возвращает список всех идентификаторов устройства, найденных в хранилище
-// с данными трекинга.
-func (db *DB) GetDevicesID() (deviceids []string, err error) {
+// с данными трекинга для данной группы.
+func (db *DB) GetDevicesID(groupID string) (deviceids []string, err error) {
 	coll := db.GetCollection(CollectionName)
 	deviceids = make([]string, 0)
-	err = coll.Find(nil).Distinct("deviceid", &deviceids)
+	err = coll.Find(bson.M{"groupid": groupID}).Distinct("deviceid", &deviceids)
 	db.FreeCollection(coll)
 	return
 }

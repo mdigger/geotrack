@@ -1,15 +1,11 @@
 package users
 
-import (
-	"log"
+import "log"
 
-	"github.com/mdigger/uuid"
-)
-
-var SampleGroupID = uuid.UUID{32, 108, 89, 30, 161, 81, 69, 64, 189, 203, 0, 195, 95, 149, 121, 43}
+var SampleGroupID = "540da544-981c-11e5-a22e-28cfe91a86a7"
 
 // GetSampleGroupID возвращает тестовый предопределенный идентификатор группы.
-func (db *DB) GetSampleGroupID() uuid.UUID {
+func (db *DB) GetSampleGroupID() string {
 	group, err := db.GetGroup(SampleGroupID)
 	if err != nil {
 		panic(err)

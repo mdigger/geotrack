@@ -18,8 +18,8 @@ import (
 const (
 	serviceNameLBS    = "lbs"
 	serviceNameUblox  = "ublox"
-	serviceNameTracks = "tracks"
 	serviceNameIMEI   = "imei"
+	serviceNameTracks = "track"
 )
 
 var ubloxToken = "I6KKO4RU_U2DclBM9GVyrA"
@@ -62,6 +62,10 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 		return err
 	}
 
+	// nce.Subscribe("*", func(subj, reply string, data []byte) {
+	// 	log.Printf("DEBUG: %q [%q]\n%s", subj, reply, string(data))
+	// })
+
 	log.Println("Initializing LBS subscription...")
 	lbs, err := lbs.InitDB(mdb)
 	if err != nil {
@@ -98,25 +102,13 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 		}
 	})
 
-	log.Println("Initializing Tracks subscription...")
-	tracksDB, err := tracks.InitDB(mdb)
-	if err != nil {
-		return err
-	}
-	nce.Subscribe(serviceNameTracks, func(data *tracks.TrackData) {
-		log.Println("Track:", data)
-		if err := tracksDB.Add(data); err != nil {
-			log.Println("Error TrackDB Add:", err)
-		}
-	})
-
 	log.Println("Initializing IMEI Identification subscription...")
 	usersDB, err := users.InitDB(mdb)
 	if err != nil {
 		return err
 	}
 	// уникальный идентификатор группы пока для примера захардкоден
-	groupID := usersDB.GetSampleGroupID()
+	groupID := users.SampleGroupID
 	nce.Subscribe(serviceNameIMEI, func(_, reply, data string) {
 		log.Println("IMEI:", data)
 		group, err := usersDB.GetGroup(groupID)
@@ -127,6 +119,19 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 			log.Println("IMEI reply error:", err)
 		}
 	})
+
+	log.Println("Initializing Tracks subscription...")
+	tracksDB, err := tracks.InitDB(mdb)
+	if err != nil {
+		return err
+	}
+	nce.Subscribe(serviceNameTracks, func(data *tracks.TrackData) {
+		log.Printf("TRACK: %v:%v %v", data.GroupID, data.DeviceID, data.Point)
+		if err := tracksDB.Add(data); err != nil {
+			log.Println("Error TrackDB Add:", err)
+		}
+	})
+
 	return nil
 }
 

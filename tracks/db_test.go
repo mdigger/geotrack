@@ -10,6 +10,7 @@ import (
 
 	"github.com/mdigger/geotrack/geo"
 	"github.com/mdigger/geotrack/mongo"
+	"github.com/mdigger/geotrack/users"
 
 	"gopkg.in/mgo.v2/bson"
 )
@@ -30,9 +31,11 @@ func TestBD(t *testing.T) {
 
 	const deviceID = "test0123456789"
 	const count = 156
+	var groupID = users.SampleGroupID
 	for i := 0; i < count; i++ {
 		track := &TrackData{
 			DeviceID: deviceID,
+			GroupID:  groupID,
 			Time:     time.Now().Add(time.Minute * time.Duration(-4*(count-i))),
 			Point:    geo.NewPoint(55.765944, 37.589248),
 		}
@@ -44,7 +47,7 @@ func TestBD(t *testing.T) {
 	var lastId bson.ObjectId
 	for {
 		// fmt.Println("lastID:", lastId.Hex())
-		tracks, err := db.Get(deviceID, 5, lastId)
+		tracks, err := db.Get(deviceID, groupID, 5, lastId)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -58,7 +61,7 @@ func TestBD(t *testing.T) {
 		lastId = tracks[len(tracks)-1].ID
 	}
 
-	track, err := db.GetLast(deviceID)
+	track, err := db.GetLast(deviceID, groupID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +78,7 @@ func TestBD(t *testing.T) {
 	}
 	fmt.Println("device ids:", strings.Join(deviceIDs, ", "))
 
-	_, err = db.GetDay(deviceID)
+	_, err = db.GetDay(deviceID, groupID)
 	if err != nil {
 		t.Fatal(err)
 	}

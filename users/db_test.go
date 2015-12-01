@@ -22,18 +22,11 @@ func TestUsers(t *testing.T) {
 		t.Fatal(err)
 	}
 	groupID := db.GetSampleGroupID()
-	usersID, err := db.GetGroup(groupID)
+	groupInfo, err := db.GetGroup(groupID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var response = &struct {
-		GroupID string
-		Users   []string
-	}{
-		GroupID: groupID.String(),
-		Users:   usersID,
-	}
-	data, err := json.MarshalIndent(response, "", "\t")
+	data, err := json.MarshalIndent(groupInfo, "", "\t")
 	if err != nil {
 		t.Fatal(err)
 	}

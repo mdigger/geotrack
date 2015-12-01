@@ -12,10 +12,12 @@ import (
 
 	"github.com/mdigger/geotrack/mongo"
 	"github.com/mdigger/geotrack/tracks"
+	"github.com/mdigger/geotrack/users"
 )
 
 var (
-	db *tracks.DB
+	db      *tracks.DB
+	groupID = users.SampleGroupID
 )
 
 // Template provides HTML template rendering
@@ -61,7 +63,7 @@ func main() {
 
 func index(c *echo.Context) error {
 	// получаем список устройств
-	deviceids, err := db.GetDevicesID()
+	deviceids, err := db.GetDevicesID(groupID)
 	if err != nil {
 		return err
 	}
@@ -70,7 +72,7 @@ func index(c *echo.Context) error {
 
 func current(c *echo.Context) error {
 	deviceID := c.Param("deviceid")
-	track, err := db.GetLast(deviceID)
+	track, err := db.GetLast(groupID, deviceID)
 	if err != nil {
 		return err
 	}
@@ -79,7 +81,7 @@ func current(c *echo.Context) error {
 
 func history(c *echo.Context) error {
 	deviceID := c.Param("deviceid")
-	tracks, err := db.GetDay(deviceID)
+	tracks, err := db.GetDay(groupID, deviceID)
 	if err != nil {
 		return err
 	}

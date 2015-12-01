@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/mdigger/geotrack/mongo"
-	"github.com/mdigger/uuid"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -26,7 +25,7 @@ func InitDB(mdb *mongo.DB) (db *DB, err error) {
 // User описывает информацию о пользователе системы.
 type User struct {
 	ID      bson.ObjectId `bson:"_id"` // уникальный идентификатор пользователя
-	GroupID uuid.UUID     // уникальный идентификатор группы (UUID)
+	GroupID string        // уникальный идентификатор группы (UUID)
 	Icon    byte          // идентификатор иконки пользователя
 }
 
@@ -66,7 +65,7 @@ type GroupInfo struct {
 
 // GetGroup возвращает список идентификаторов всех пользователей, входящих в указанную группу.
 // Плюс, к идентификатору пользователя автоматичики добавляется номер иконки.
-func (db *DB) GetGroup(groupID uuid.UUID) (info *GroupInfo, err error) {
+func (db *DB) GetGroup(groupID string) (info *GroupInfo, err error) {
 	coll := db.GetCollection(CollectionName)
 	users := make([]*User, 0)
 	err = coll.Find(bson.M{"groupid": groupID}).Select(bson.M{"icon": 1}).All(&users)
@@ -78,7 +77,7 @@ func (db *DB) GetGroup(groupID uuid.UUID) (info *GroupInfo, err error) {
 		return
 	}
 	info = &GroupInfo{
-		GroupID: groupID.String(),
+		GroupID: groupID,
 		Users:   make([]string, len(users)),
 	}
 	for i, user := range users {
