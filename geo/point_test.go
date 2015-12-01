@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math"
 	"testing"
+
+	"github.com/kr/pretty"
 )
 
 func TestPoint(t *testing.T) {
@@ -29,12 +31,8 @@ func TestPoint(t *testing.T) {
 
 func TestGeoPoint(t *testing.T) {
 	point := NewPoint(55.715084, 37.57351)
-	fmt.Println(point.Geo())
-}
-
-func TestGeoNilPoint(t *testing.T) {
-	var point *Point
-	fmt.Println(point.Geo())
+	fmt.Println(point.GeoPoint())
+	pretty.Println(point.GeoPolygon(500))
 }
 
 func TestDistance(t *testing.T) {
