@@ -26,6 +26,7 @@ func InitDB(mdb *mongo.DB) (db *DB, err error) {
 type User struct {
 	ID      bson.ObjectId `bson:"_id"` // уникальный идентификатор пользователя
 	GroupID string        // уникальный идентификатор группы (UUID)
+	Name    string        `bson:",omitempty" json:",omitempty"` // отображаемое имя
 	Icon    byte          // идентификатор иконки пользователя
 }
 
@@ -40,8 +41,7 @@ func (db *DB) Save(users ...*User) (err error) {
 		if !user.ID.Valid() {
 			user.ID = bson.NewObjectId()
 		}
-		_, err = coll.UpsertId(user.ID, user)
-		if err != nil {
+		if _, err = coll.UpsertId(user.ID, user); err != nil {
 			break
 		}
 	}
