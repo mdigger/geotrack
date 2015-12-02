@@ -37,7 +37,7 @@ func TestBD(t *testing.T) {
 			DeviceID: deviceID,
 			GroupID:  groupID,
 			Time:     time.Now().Add(time.Minute * time.Duration(-4*(count-i))),
-			Point:    geo.NewPoint(55.765944, 37.589248),
+			Point:    geo.NewPoint(37.589248, 55.765944),
 		}
 		if err := db.Add(track); err != nil {
 			t.Fatal(err)
