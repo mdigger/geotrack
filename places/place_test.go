@@ -51,7 +51,7 @@ func TestPlaces(t *testing.T) {
 			geo.NewPoint(37.573510, 55.719576),
 		)},
 	}
-	// _ = places
+	_ = places
 	if err := db.Save(groupID, places...); err != nil {
 		t.Fatal(err)
 	}
@@ -71,5 +71,5 @@ func TestPlaces(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Printf("In %d places\n", len(placeIDs))
+	fmt.Printf("In %d places\n%v\n", len(placeIDs), placeIDs)
 }

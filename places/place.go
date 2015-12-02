@@ -34,13 +34,14 @@ type Place struct {
 }
 
 // Save сохраняет описание места или нескольких для указанной группы в хранилище.
+// В объекте должно быть указано хотя бы одно описание места: либо круг, либо полигон.
+// Если указано и то, и другое, то используется только круг. Если не указано ни того,
+// ни другого, то такая запись либо игнорируется, либо удаляется, если указан корректный
+// ее идентификатор. В процессе сохранения всегда идентификатор группы заменяется на
+// указанный в параметрах вызова.
 func (db *DB) Save(groupID string, places ...*Place) (err error) {
 	coll := db.GetCollection(CollectionName)
 	for _, place := range places {
-		if !place.ID.Valid() {
-			place.ID = bson.NewObjectId()
-		}
-		place.GroupID = groupID // восстанавливаем группу, если вдруг она пропала
 		// анализируем описание места и формируем данные для индексации
 		if place.Circle != nil {
 			place.Polygon = nil
@@ -49,7 +50,18 @@ func (db *DB) Save(groupID string, places ...*Place) (err error) {
 			place.Circle = nil
 			place.Geo = place.Polygon.Geo()
 		} else {
+			// удаляем, если нет данных и нормальный идентификатор
+			// в противном случае — просто игнорируем
+			if place.ID.Valid() {
+				if err = coll.RemoveId(place.ID); err != nil {
+					break
+				}
+			}
 			continue
+		}
+		place.GroupID = groupID // восстанавливаем группу, если вдруг она пропала
+		if !place.ID.Valid() {
+			place.ID = bson.NewObjectId()
 		}
 		if _, err = coll.UpsertId(place.ID, place); err != nil {
 			break
@@ -60,6 +72,8 @@ func (db *DB) Save(groupID string, places ...*Place) (err error) {
 }
 
 // Get возвращает список всех описаний мест для указанной группы.
+// Результат содержит только информацию с описание круга или полигона. Информация
+// о группе и сформированном внутреннем индексном объекте Geo не возвращается.
 func (db *DB) Get(groupID string) (places []*Place, err error) {
 	coll := db.GetCollection(CollectionName)
 	places = make([]*Place, 0)
@@ -69,10 +83,11 @@ func (db *DB) Get(groupID string) (places []*Place, err error) {
 	return
 }
 
-// Track возвращает список всех идентификаторов мест, которым соответствует данная точка трекера.
+// Track возвращает список всех идентификаторов мест, определенных для группы,
+// которым соответствует данная точка трекера.
 func (db *DB) Track(track *tracks.TrackData) (placeIDs []string, err error) {
 	coll := db.GetCollection(CollectionName)
-	placeIDs = make([]string, 0)
+	ids := make([]*bson.ObjectId, 0)
 	err = coll.Find(bson.M{
 		"groupid": track.GroupID,
 		"geo": bson.M{
@@ -80,6 +95,10 @@ func (db *DB) Track(track *tracks.TrackData) (placeIDs []string, err error) {
 				"$geometry": track.Point.Geo(),
 			},
 		},
-	}).Distinct("_id", &placeIDs)
+	}).Distinct("_id", &ids)
+	placeIDs = make([]string, len(ids))
+	for i, id := range ids {
+		placeIDs[i] = id.Hex()
+	}
 	return
 }
