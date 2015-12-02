@@ -11,13 +11,15 @@ import (
 	"github.com/labstack/echo/middleware"
 
 	"github.com/mdigger/geotrack/mongo"
+	"github.com/mdigger/geotrack/places"
 	"github.com/mdigger/geotrack/tracks"
 	"github.com/mdigger/geotrack/users"
 )
 
 var (
-	db      *tracks.DB
-	groupID = users.SampleGroupID
+	db          *tracks.DB
+	groupPlaces []*places.Place
+	groupID     = users.SampleGroupID
 )
 
 // Template provides HTML template rendering
@@ -46,6 +48,17 @@ func main() {
 	db, err = tracks.InitDB(mdb)
 	if err != nil {
 		log.Println("Error initializing TrackDB:", err)
+		return
+	}
+	// инициализируем хранилище с информацией о местах
+	placesDB, err := places.InitDB(mdb)
+	if err != nil {
+		log.Println("Error initializing PlaceDB:", err)
+		return
+	}
+	groupPlaces, err = placesDB.Get(groupID)
+	if err != nil {
+		log.Println("Error getting PlaceDB:", err)
 		return
 	}
 
@@ -81,9 +94,16 @@ func current(c *echo.Context) error {
 
 func history(c *echo.Context) error {
 	deviceID := c.Param("deviceid")
-	tracks, err := db.GetDay(groupID, deviceID)
+	dayTracks, err := db.GetDay(groupID, deviceID)
 	if err != nil {
 		return err
 	}
-	return c.Render(http.StatusOK, "history.html", tracks)
+	data := struct {
+		Tracks []*tracks.Track
+		Places []*places.Place
+	}{
+		Tracks: dayTracks,
+		Places: groupPlaces,
+	}
+	return c.Render(http.StatusOK, "history.html", &data)
 }

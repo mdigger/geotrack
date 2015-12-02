@@ -13,17 +13,17 @@
     ymaps.ready(init);
     function init() {
       var myMap = new ymaps.Map("map", {
-        center: {{if .}}{{with index . 0}}{{.Point}}{{end}}{{else}}[55.715084,37.57351]{{end}},
+        center: {{if .Tracks}}{{with index .Tracks 0}}{{.Point}}{{end}}{{else}}[37.57351,55.715084]{{end}},
         zoom: 16,
         controls: ['zoomControl', 'typeSelector']
       });
-      {{if .}}var myPolyline = new ymaps.Polyline([{{range .}}
+      {{if .Tracks}}var myPolyline = new ymaps.Polyline([{{range .Tracks}}
         {{.Point}},{{end}}
       ]);
       myMap.geoObjects.add(myPolyline);
       var data = {
         type: "FeatureCollection",
-        features: [{{ range $index, $element := . }}
+        features: [{{range $index, $element := .Tracks}}
           {type: "Feature", id: "{{$element.ID.Hex}}", 
            geometry: {type: "Point", coordinates: {{$element.Point}}}, 
            properties: {
@@ -37,10 +37,15 @@
           }},{{end}}
         ]
       };
-      var objectManager = new ymaps.ObjectManager({clusterize: true});
+      var objectManager = new ymaps.ObjectManager({groupByCoordinates: true, clusterize: true});
       objectManager.add(data);
       myMap.geoObjects.add(objectManager);
-      myMap.setBounds(myMap.geoObjects.getBounds(), {checkZoomRange: true});{{end}}
+      myMap.setBounds(myMap.geoObjects.getBounds(), {checkZoomRange: true});{{end}}{{range .Places}}
+      {{if .Circle}}myMap.geoObjects.add(new ymaps.Circle([{{.Circle.Center}},{{.Circle.Radius}}]{{if .Name}}, {
+          hintContent: "{{.Name}}"
+      }{{end}}));{{else if .Polygon}}myMap.geoObjects.add(new ymaps.Polygon({{.Polygon}}{{if .Name}}, {
+          hintContent: "{{.Name}}"
+      }{{end}}));{{end}}{{end}}
       myMap.copyrights.add('mdigger');
     }
   </script>

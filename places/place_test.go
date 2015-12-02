@@ -1,4 +1,4 @@
-package place
+package places
 
 import (
 	"fmt"
@@ -29,27 +29,24 @@ func TestPlaces(t *testing.T) {
 		groupID  = users.SampleGroupID
 	)
 	places := []*Place{
-		{Circle: geo.NewCircle(37.57351, 55.715084, 500.0)},
-		{Circle: geo.NewCircle(37.589248, 55.765944, 500.0)},
+		{Circle: geo.NewCircle(37.57351, 55.715084, 250.0), Name: "Работа"},
+		{Circle: geo.NewCircle(37.589248, 55.765944, 200.0), Name: "Дом"},
 		{Polygon: geo.NewPolygon(
-			geo.NewPoint(37.573510, 55.719576),
-			geo.NewPoint(37.576561, 55.719234),
-			geo.NewPoint(37.579148, 55.718260),
-			geo.NewPoint(37.580877, 55.716803),
-			geo.NewPoint(37.581484, 55.715084),
-			geo.NewPoint(37.580877, 55.713365),
-			geo.NewPoint(37.579148, 55.711908),
-			geo.NewPoint(37.576561, 55.710934),
-			geo.NewPoint(37.573510, 55.710592),
-			geo.NewPoint(37.570459, 55.710934),
-			geo.NewPoint(37.567872, 55.711908),
-			geo.NewPoint(37.566143, 55.713365),
-			geo.NewPoint(37.565536, 55.715084),
-			geo.NewPoint(37.566143, 55.716803),
-			geo.NewPoint(37.567872, 55.718260),
-			geo.NewPoint(37.570459, 55.719234),
-			geo.NewPoint(37.573510, 55.719576),
-		)},
+			geo.NewPoint(37.6256, 55.7522),
+			geo.NewPoint(37.6304, 55.7523),
+			geo.NewPoint(37.6310, 55.7527),
+			geo.NewPoint(37.6322, 55.7526),
+			geo.NewPoint(37.6320, 55.7521),
+			geo.NewPoint(37.6326, 55.7517),
+			geo.NewPoint(37.6321, 55.7499),
+			geo.NewPoint(37.6305, 55.7499),
+			geo.NewPoint(37.6305, 55.7502),
+			geo.NewPoint(37.6264, 55.7504),
+			geo.NewPoint(37.6264, 55.7500),
+			geo.NewPoint(37.6254, 55.7500),
+			geo.NewPoint(37.6253, 55.7520),
+			geo.NewPoint(37.6256, 55.7522),
+		), Name: "Знаменский монастырь"},
 	}
 	_ = places
 	if err := db.Save(groupID, places...); err != nil {

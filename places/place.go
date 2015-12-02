@@ -1,4 +1,4 @@
-package place
+package places
 
 import (
 	"github.com/mdigger/geotrack/geo"
