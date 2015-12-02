@@ -29,7 +29,26 @@ func TestPlaces(t *testing.T) {
 		groupID  = users.SampleGroupID
 	)
 	places := []*Place{
-		{Circle: geo.NewCircle(37.57351, 55.715084, 250.0), Name: "Работа"},
+		// {Circle: geo.NewCircle(37.57351, 55.715084, 250.0), Name: "Работа"},
+		{Polygon: geo.NewPolygon(
+			geo.NewPoint(37.5667, 55.7152),
+			geo.NewPoint(37.5688, 55.7167),
+			geo.NewPoint(37.5703, 55.7169),
+			geo.NewPoint(37.5706, 55.7168),
+			geo.NewPoint(37.5726, 55.7159),
+			geo.NewPoint(37.5728, 55.7158),
+			geo.NewPoint(37.5731, 55.7159),
+			geo.NewPoint(37.5751, 55.7152),
+			geo.NewPoint(37.5758, 55.7148),
+			geo.NewPoint(37.5755, 55.7144),
+			geo.NewPoint(37.5749, 55.7141),
+			geo.NewPoint(37.5717, 55.7131),
+			geo.NewPoint(37.5709, 55.7128),
+			geo.NewPoint(37.5694, 55.7125),
+			geo.NewPoint(37.5661, 55.7145),
+			geo.NewPoint(37.5660, 55.7147),
+			geo.NewPoint(37.5667, 55.7152),
+		), Name: "Работа"},
 		{Circle: geo.NewCircle(37.589248, 55.765944, 200.0), Name: "Дом"},
 		{Polygon: geo.NewPolygon(
 			geo.NewPoint(37.6256, 55.7522),
