@@ -71,6 +71,7 @@ func main() {
 	e.Get("/", index)
 	e.Get("/:deviceid", current)
 	e.Get("/:deviceid/history", history)
+	e.ServeFile("/edit", "placeeditor.html")
 	e.Run(*addr)
 }
 
