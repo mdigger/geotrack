@@ -54,31 +54,6 @@ func (p *Point) Geo() interface{} {
 	}
 }
 
-// // GeoPolygon возвращает представление окружности с центорм в данной точке в виде полигона
-// // в формате GeoJSON.
-// //
-// // Все эти извращения нужны только для того, чтобы нормально работали поисковые индексы в MongoDB,
-// // по той простой причине, что Mongo позволяет сохранять только объекты в формате GeoJSON, а те
-// // умники, которые разрабатывали данный стандарт, решили, что круг — это абсолютно лишняя
-// // сущность, которая не вписывается в их мироощущение.
-// func (p *Point) GeoPolygon(radius float64) interface{} {
-// 	if p == nil || radius <= 0 {
-// 		return nil
-// 	}
-// 	const count = 12
-// 	coords := make([][]float64, count+1)
-// 	for i := range coords {
-// 		coords[i] = p.Move(radius, 360.0/float64(count)*float64(i))[:]
-// 	}
-// 	return &struct {
-// 		Type        string
-// 		Coordinates [][]float64
-// 	}{
-// 		Type:        "Polygon",
-// 		Coordinates: coords,
-// 	}
-// }
-
 const (
 	EarthRadius float64 = 6378137.0 // радиус Земли в метрах
 )
@@ -110,8 +85,7 @@ func (p *Point) BearingTo(p2 *Point) float64 {
 	y := math.Sin(dLon) * math.Cos(lat2)
 	x := math.Cos(lat1)*math.Sin(lat2) -
 		math.Sin(lat1)*math.Cos(lat2)*math.Cos(dLon)
-	brng := math.Atan2(y, x) * 180.0 / math.Pi
-	return brng
+	return math.Atan2(y, x) * 180.0 / math.Pi
 }
 
 // Distance возвращает дистанцию между двумя точками в метрах.
@@ -120,9 +94,7 @@ func (p *Point) Distance(p2 *Point) float64 {
 	dLat := (p2.Latitude() - p.Latitude()) * math.Pi / 180.0
 	lat1 := p.Latitude() * math.Pi / 180.0
 	lat2 := p2.Latitude() * math.Pi / 180.0
-	a1 := math.Sin(dLat/2) * math.Sin(dLat/2)
-	a2 := math.Sin(dLon/2) * math.Sin(dLon/2) * math.Cos(lat1) * math.Cos(lat2)
-	a := a1 + a2
-	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
-	return EarthRadius * c
+	a := math.Sin(dLat/2)*math.Sin(dLat/2) +
+		math.Sin(dLon/2)*math.Sin(dLon/2)*math.Cos(lat1)*math.Cos(lat2)
+	return EarthRadius * 2 * math.Asin(math.Sqrt(a))
 }

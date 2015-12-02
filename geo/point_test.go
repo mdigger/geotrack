@@ -58,38 +58,10 @@ func TestPoint3(t *testing.T) {
 }
 
 func TestDistance(t *testing.T) {
-	const rad = 6372795
-	// координаты двух точек
-	p1 := NewPoint(-139.398, 77.1539)
-	p2 := NewPoint(-139.55, -77.1804)
-	// в радианах
-	lat1 := p1.Latitude() * math.Pi / 180
-	lat2 := p2.Latitude() * math.Pi / 180
-	long1 := p1.Longitude() * math.Pi / 180
-	long2 := p2.Longitude() * math.Pi / 180
-	// косинусы и синусы широт и разницы долгот
-	cl1 := math.Cos(lat1)
-	cl2 := math.Cos(lat2)
-	sl1 := math.Sin(lat1)
-	sl2 := math.Sin(lat2)
-	delta := long2 - long1
-	cdelta := math.Cos(delta)
-	sdelta := math.Sin(delta)
-	// вычисления длины большого круга
-	y := math.Sqrt(math.Pow(cl2*sdelta, 2) + math.Pow(cl1*sl2-sl1*cl2*cdelta, 2))
-	x := sl1*sl2 + cl1*cl2*cdelta
-	ad := math.Atan2(y, x)
-	dist := ad * rad
-	fmt.Printf("Dist: %f\n", dist)
-	// вычисление начального азимута
-	// x = (cl1 * sl2) - (sl1 * cl2 * cdelta)
-	// y = sdelta * cl2
-	// z := (math.Atan(-y / x)) / (math.Pi / 180)
-	// if x < 0 {
-	// 	z = z + 180.
-	// }
-	// z2 := (z+180)%360 - 180
-	// z2 = -z2 * math.Pi / 180
-	// anglerad2 := z2 - ((2 * math.Pi) * math.Floor((z2 / (2 * math.Pi))))
-	// angledeg := (anglerad2 * 180) / math.Pi
+	p1 := NewPoint(37.57351, 55.715084)
+	p2 := NewPoint(37.589248, 55.765944)
+	fmt.Printf("Dist: %f\n", p1.Distance(p2))
+	for i := 0; i < 16; i++ {
+		fmt.Printf("myMap.geoObjects.add(new ymaps.Placemark(%v));\n", p1.Move(500.0, float64(i)*360.0/16.0))
+	}
 }
