@@ -24,10 +24,11 @@ func InitDB(mdb *mongo.DB) (db *DB, err error) {
 
 // User описывает информацию о пользователе системы.
 type User struct {
-	ID      bson.ObjectId `bson:"_id"` // уникальный идентификатор пользователя
-	GroupID string        // уникальный идентификатор группы (UUID)
-	Name    string        `bson:",omitempty" json:",omitempty"` // отображаемое имя
-	Icon    byte          // идентификатор иконки пользователя
+	ID       bson.ObjectId `bson:"_id"` // уникальный идентификатор пользователя
+	GroupID  string        // уникальный идентификатор группы (UUID)
+	Name     string        `bson:",omitempty" json:",omitempty"` // отображаемое имя
+	Icon     byte          // идентификатор иконки пользователя
+	Password []byte        `json:"-"` // хеш пароля пользователя
 }
 
 // Save сохраняет информацию о пользователях в хранилище.
