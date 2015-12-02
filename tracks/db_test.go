@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"strings"
 	"testing"
 	"time"
@@ -30,24 +31,68 @@ func TestBD(t *testing.T) {
 	}
 
 	const deviceID = "test0123456789"
-	const count = 156
-	var groupID = users.SampleGroupID
-	for i := 0; i < count; i++ {
+	var (
+		groupID = users.SampleGroupID
+		points  = []*geo.Point{
+			{37.57351, 55.715084},
+			{37.595061, 55.736077},
+			{37.589248, 55.765944},
+			{37.587119, 55.752658},
+			{37.627804, 55.752541},
+			{37.642815, 55.74711},
+			{37.689024, 55.724109},
+		}
+		currentPoint          = points[0]                       // текущая точка
+		destinationPointIndex = 1                               // индекс точки назначения
+		destinationPoint      = points[destinationPointIndex]   // точка назначения
+		currentTime           = time.Now().Add(time.Hour * -12) // время начала
+		interval              time.Duration                     // интервал времени
+	)
+	const (
+		MaxSpeed   = 4.5 * 1000 / 60 / 60 // максимальная скорость передвижения — 4.5 км/ч
+		MaxBearing = 45.0                 // максимальное отклонение
+	)
+
+	for {
 		track := &TrackData{
 			DeviceID: deviceID,
 			GroupID:  groupID,
-			Time:     time.Now().Add(time.Minute * time.Duration(-4*(count-i))),
-			Point:    geo.NewPoint(37.589248, 55.765944),
+			Time:     currentTime,
+			Point:    currentPoint,
 		}
 		if err := db.Add(track); err != nil {
 			t.Fatal(err)
+		}
+		// случайный интервал до 10 минут
+		interval = time.Duration(rand.Int63n(int64(time.Minute * 10)))
+		currentTime = currentTime.Add(interval) // увеличиваем время
+		// вычисляем расстояние с учетом прошедшего времени
+		dist := rand.Float64() * MaxSpeed * float64(interval.Seconds())
+		// случайное отклонение от заданного направления
+		bearing := currentPoint.BearingTo(destinationPoint) + rand.Float64()*MaxBearing - (MaxBearing / 2)
+		// перемещаемся на заданное расстояние в заданном направлении
+		currentPoint = currentPoint.Move(dist, bearing)
+		// проверяем, что расстояние не меньше 150 метров
+		if currentPoint.Distance(destinationPoint) < 150.0 {
+			if len(points) == destinationPointIndex+1 {
+				log.Println("Мы достигли конечной точки назначения")
+				break
+			}
+			log.Println("Мы достигли точки назначения", destinationPointIndex)
+			currentPoint = destinationPoint
+			destinationPointIndex++
+			destinationPoint = points[destinationPointIndex]
+		}
+		if currentTime.After(time.Now()) {
+			log.Println("Время истекло")
+			break
 		}
 	}
 
 	var lastId bson.ObjectId
 	for {
 		// fmt.Println("lastID:", lastId.Hex())
-		tracks, err := db.Get(deviceID, groupID, 5, lastId)
+		tracks, err := db.Get(groupID, deviceID, 5, lastId)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -61,7 +106,7 @@ func TestBD(t *testing.T) {
 		lastId = tracks[len(tracks)-1].ID
 	}
 
-	track, err := db.GetLast(deviceID, groupID)
+	track, err := db.GetLast(groupID, deviceID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,13 +117,13 @@ func TestBD(t *testing.T) {
 	}
 	fmt.Println(string(jsondata))
 
-	deviceIDs, err := db.GetDevicesID()
+	deviceIDs, err := db.GetDevicesID(groupID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println("device ids:", strings.Join(deviceIDs, ", "))
 
-	_, err = db.GetDay(deviceID, groupID)
+	_, err = db.GetDay(groupID, deviceID)
 	if err != nil {
 		t.Fatal(err)
 	}

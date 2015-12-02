@@ -87,7 +87,7 @@ var selector = bson.M{"time": 1, "point": 1}
 //
 // Метод поддерживает разбиение результатов на отдельные блоки: limit указывает максимальное
 // количество отдаваемых в ответ данных, а lastID — идентификатор последнего полученного трека.
-func (db *DB) Get(deviceID, groupID string, limit int, lastID bson.ObjectId) (tracks []*Track, err error) {
+func (db *DB) Get(groupID, deviceID string, limit int, lastID bson.ObjectId) (tracks []*Track, err error) {
 	coll := db.GetCollection(CollectionName)
 	// ищем все треки с указанного устройства
 	var search = bson.M{
