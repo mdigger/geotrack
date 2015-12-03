@@ -19,6 +19,6 @@
 
 #### Сервисы
 
-- [`nats-service`](../../tree/master/nats-service) — сервис для взаимодействия с другими микросервисами через NATS
-- [`http-api`](../../tree/master/http-api) — веб-сервер с поддержкой REST API сервиса
-- [`http-map`](../../tree/master/http-map) — тестовый веб-сервер для отображения координат на карте
+- [`nats-geotrack`](../../tree/master/nats-geotrack) — сервис для взаимодействия с другими микросервисами через NATS
+- [`http-geotrack-api`](../../tree/master/http-geotrack-api) — веб-сервер с поддержкой REST API сервиса
+- [`http-geotrack-map`](../../tree/master/http-geotrack-map) — тестовый веб-сервер для отображения координат на карте

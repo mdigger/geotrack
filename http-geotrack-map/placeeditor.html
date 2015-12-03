@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Карта</title>
+  <meta charset="utf-8" />
+  <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&coordorder=longlat"></script>
+  <script src="https://yastatic.net/jquery/2.1.4/jquery.min.js"></script>
+  <style>
+    html, body, #map {
+        width: 100%; height: 97%; padding: 0; margin: 0;
+    }
+  </style>
+  <script type="text/javascript">
+    ymaps.ready(init);
+    function init() {
+      var myMap = new ymaps.Map("map", {
+        center: [37.57351,55.715084],
+        zoom: 16,
+        controls: ['zoomControl', 'typeSelector', 'rulerControl']
+      });
+      myMap.copyrights.add('mdigger');
+      polygon = new ymaps.GeoObject({
+        geometry: {
+            type: "Polygon",
+            coordinates: []
+        }
+      });
+      myMap.geoObjects.add(polygon);
+      polygon.editor.startDrawing();
+    
+    $('input').attr('disabled', false); 
+    // Обработка нажатия на любую кнопку.
+    $('input').click(function(){
+            // Отключаем кнопки, чтобы на карту нельзя было
+            // добавить более одного редактируемого объекта (чтобы в них не запутаться).
+            $('input').attr('disabled', true);
+            polygon.editor.stopEditing();
+            printGeometry(polygon.geometry.getCoordinates());
+        }); 
+    }
+    
+    // Выводит массив координат геообъекта в <div id="geometry">
+    function printGeometry (coords) {
+        $('#geometry').html('Координаты: ' + stringify(coords));
+
+        function stringify (coords) {
+            var res = '';
+            if ($.isArray(coords)) {
+                res = '[ ';
+                for (var i = 0, l = coords.length; i < l; i++) {
+                    if (i > 0) {
+                        res += ', ';
+                    }
+                    res += stringify(coords[i]);
+                }
+                res += ' ]';
+            } else if (typeof coords == 'number') {
+                res = coords.toPrecision(6);
+            } else if (coords.toString) {
+                res = coords.toString();
+            }
+
+            return res;
+        }
+    }  
+  </script>
+</head>
+<body>
+  <div id="map"></div>
+  <input type="button" value="Завершить редактирование" id="stopEditPolyline"/>
+  <div id="geometry"/></div>
+</body>
+</html>

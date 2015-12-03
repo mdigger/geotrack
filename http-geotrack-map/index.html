@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Параметры</title>
+    <meta charset="utf-8">
+</head>
+<body>
+<h3>Devices</h3>
+<dl>{{range .}}
+<dt>{{.}}</dt>
+<dd><a href="/{{.}}">Current</a> | <a href="/{{.}}/history">History</a></dd>{{end}}
+</dl>
+</body>
+</html>
