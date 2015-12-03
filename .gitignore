@@ -1,10 +1,5 @@
-
 lbs/lbs-import/cell_towers.csv
-
-http-map/http-map
-
 lbs/lbs-import/lbs-import
-
-nats-service/nats-service
-
-http-api/http-api
+http-geotrack-api/http-geotrack-api
+http-geotrack-map/http-geotrack-map
+nats-geotrack/nats-geotrack

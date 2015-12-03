@@ -1,21 +1,16 @@
 package main
 
 import (
-	"crypto/rand"
-	"encoding/base64"
-	"errors"
 	"flag"
-	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	logger "github.com/labstack/gommon/log"
 	"github.com/mdigger/geotrack/mongo"
 	"github.com/mdigger/geotrack/places"
+	"github.com/mdigger/geotrack/token"
 	"github.com/mdigger/geotrack/tracks"
 	"github.com/mdigger/geotrack/users"
 	"golang.org/x/crypto/bcrypt"
@@ -23,22 +18,19 @@ import (
 )
 
 var (
-	jwtCryptoKey []byte                // используется для подписи JWT
-	usersDB      *users.DB             // хранилище пользователей
-	placesDB     *places.DB            // хранилище мест
-	tracksDB     *tracks.DB            // хранилище треков
-	groupID      = users.SampleGroupID // уникальный идентификатор группы
-	log          *logger.Logger        // вывод информации в лог
+	usersDB     *users.DB             // хранилище пользователей
+	placesDB    *places.DB            // хранилище мест
+	tracksDB    *tracks.DB            // хранилище треков
+	groupID     = users.SampleGroupID // уникальный идентификатор группы
+	tokenEngine *token.Engine         // генератор токенов
+	log         *logger.Logger        // вывод информации в лог
 )
 
 const (
-	jwtExpireDuration = time.Minute * 30    // время жизни JWT-токена
-	jwtIssuer         = "com.xyzrd.tracker" // идентификатор издателя
-	tracksLimit       = 200                 // лимит при отдаче списка треков
+	tracksLimit = 200 // лимит при отдаче списка треков
 )
 
 func main() {
-	fmt.Println(base64.StdEncoding.EncodeToString(jwtCryptoKey))
 	addr := flag.String("http", ":8080", "Server address & port")
 	mongoURL := flag.String("mongodb", "mongodb://localhost/watch", "MongoDB connection URL")
 	flag.Parse()
@@ -69,10 +61,11 @@ func main() {
 		return
 	}
 	groupID = usersDB.GetSampleGroupID() // временная инициализация пользователей
-	// генерация случайного ключа при каждом запуске сервера
-	jwtCryptoKey = make([]byte, 256)
-	if _, err := rand.Read(jwtCryptoKey); err != nil {
-		log.Error("Error creating signature key for JWT: %v", err)
+
+	// инициализируем работу с токенами
+	tokenEngine, err = token.Init("com.xyzrd.geotracker", time.Minute*30, nil)
+	if err != nil {
+		log.Error("Error initializing Token Engine: %v", err)
 		return
 	}
 
@@ -83,15 +76,13 @@ func main() {
 	apiV1 := e.Group("/api/v1")                                   // группа URL для обработки API версии 1.0.
 	apiV1.Get("/login", login)                                    // авторизация пользователя
 	apiV1Sec := apiV1.Group("")                                   // группа запросов с авторизацией
-	apiV1Sec.Use(jwtAuth)                                         // добавляем проверку токена в заголовке
+	apiV1Sec.Use(auth)                                            // добавляем проверку токена в заголовке
 	apiV1Sec.Get("/users", getUserslList)                         // возвращает список пользователей
 	apiV1Sec.Get("/places", getPlaceslList)                       // возвращает список интересующих мест
 	apiV1Sec.Get("/devices", getDeviceslList)                     // возвращает список устройств
 	apiV1Sec.Get("/devices/:device-id", getDeviceCurrent)         // возвращает последнюю точку трекинга устройства
 	apiV1Sec.Get("/devices/:device-id/history", getDeviceHistory) // возвращает список треков устройства
 	apiV1Sec.Post("/register", postRegister)                      // регистрирует устройство для отправки push-сообщений
-
-	fmt.Println(e.URI(getUserslList))
 
 	log.Info("Starting HTTP server at %q...", *addr)
 	e.Run(*addr)
@@ -121,16 +112,12 @@ func login(c *echo.Context) error {
 		return echo.NewHTTPError(http.StatusForbidden)
 	}
 	// генерируем JWT-токен
-	token := jwt.New(jwt.SigningMethodHS256)
-	if jwtIssuer != "" {
-		token.Claims["iss"] = jwtIssuer
-	}
-	token.Claims["exp"] = time.Now().Add(jwtExpireDuration).Unix()
-	token.Claims["id"] = user.ID
-	token.Claims["group"] = user.GroupID
-	tokenString, err := token.SignedString(jwtCryptoKey)
+	tokenString, err := tokenEngine.Token(map[string]interface{}{
+		"id":    user.ID,
+		"group": user.GroupID,
+	})
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest)
+		return err
 	}
 	// отдаем в ответ сервера
 	response := c.Response()
@@ -140,43 +127,22 @@ func login(c *echo.Context) error {
 	return nil
 }
 
-// jwtAuth является вспомогательной функцией, проверяющей и разбирающей авторизационную информацию
-// в заголовке в формате JWT. Разобранная информация сохраняется в контексте под именем "User".
-func jwtAuth(h echo.HandlerFunc) echo.HandlerFunc {
+// auth является вспомогательной функцией, проверяющей и разбирающей токен с авторизационной
+// информацией в HTTP-заголовке. Разобранная информация сохраняется в контексте запроса.
+func auth(h echo.HandlerFunc) echo.HandlerFunc {
 	return func(c *echo.Context) error {
-		header := c.Request().Header
-		// пропускаем запросы WebSocket
-		if header.Get(echo.Upgrade) == echo.WebSocket {
+		req := c.Request()                                  // получаем доступ к HTTP-запросу
+		if req.Header.Get(echo.Upgrade) == echo.WebSocket { // пропускаем запросы WebSocket
 			return nil
 		}
-		// получаем заголовок авторизации и проверяем, что авторизация с JWT-токеном
-		auth := header.Get("Authorization")
-		if len(auth) < 7 || strings.ToUpper(auth[0:6]) != "BEARER" {
+		data, err := tokenEngine.ParseRequest(req) // разбираем токен из запроса
+		if err != nil {
+			log.Warn("Bad token: %v", err)
 			return echo.NewHTTPError(http.StatusForbidden)
 		}
-		// разбираем и проверяем сам токен
-		token, err := jwt.Parse(auth[7:], func(token *jwt.Token) (key interface{}, err error) {
-			// проверяем метод вычисления сигнатуры
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				err = fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-			} else if token.Claims["iss"] != jwtIssuer {
-				err = fmt.Errorf("Unexpected Issuer: %v", token.Claims["iss"])
-			} else if token.Claims["id"] == "" {
-				err = errors.New("Unexpected User ID")
-			} else if token.Claims["group"] == "" {
-				err = errors.New("Unexpected Group ID")
-			}
-			key = jwtCryptoKey // ключ, используемый для подписи
-			return
-		})
-		// возвращаем ошибку, если нарушена целостность токена
-		if err != nil || !token.Valid {
-			log.Warn("Bad JWT-token: %v", err)
-			return echo.NewHTTPError(http.StatusForbidden)
-		}
+		groupID := data["group"].(string)
+		userID := data["id"].(string)
 		// проверяем, что пользователь есть и входит в эту группу
-		groupID := token.Claims["group"].(string)
-		userID := token.Claims["id"].(string)
 		exists, err := usersDB.Check(groupID, userID)
 		if err != nil {
 			return err
@@ -184,11 +150,9 @@ func jwtAuth(h echo.HandlerFunc) echo.HandlerFunc {
 		if !exists {
 			return echo.NewHTTPError(http.StatusForbidden)
 		}
-		// сохраняем данные в контексте запроса
-		c.Set("GroupID", groupID)
+		c.Set("GroupID", groupID) // сохраняем данные в контексте запроса
 		c.Set("ID", userID)
-		// выполняем основной обработчик
-		return h(c)
+		return h(c) // выполняем основной обработчик
 	}
 }
 
