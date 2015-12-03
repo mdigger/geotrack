@@ -6,7 +6,7 @@
 
 В ответ приходит токен в формате JWT:
 
-	eyJhbGciOiJIUzI1...ft2NWVxXbAaERzEGMUiFUmNVcZg
+	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NDkxMTgzNzAsImdyb3VwIjoiNTQwZGE1NDQtOTgxYy0xMWU1LWEyMmUtMjhjZmU5MWE4NmE3IiwiaWNvbiI6MCwiaWQiOiI1NjVmYTgzZTM0NWVkOTliOTdjNGVhNTYiLCJpc3MiOiJjb20ueHl6cmQudHJhY2tlciIsIm5hbWUiOiJVc2VyICMxIiwic3ViIjoidXNlciJ9.VYn38L5WwTgDP2Jfdvzz834EsPN-Q12NCZl1lzsyfho
 
 Пока токен действителен в течение *30* минут, после чего его нужно получать заново. В дальнейшем, возможно, я пересмотрю свои взгляды на это.
 
