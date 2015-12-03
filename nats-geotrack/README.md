@@ -4,7 +4,7 @@
 
 Строки соединения с MongoDB и NATS вынесены в параметры и могут изменяться при запуске приложения. Аналогично, в параметры вынесен токен для работы с сервером U-Blox. 
 
-	Usage of ./nats-service:
+	Usage of ./nats-geotrack:
 	  -mongodb string
 	    	MongoDB connection URL (default "mongodb://localhost/watch")
 	  -nats string

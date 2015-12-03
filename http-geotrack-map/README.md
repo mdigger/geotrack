@@ -2,7 +2,7 @@
 
 Для запуска можно указать адрес веб-сервера, на котором он будет отвечать, и адрес MongoDB с данными треков.
 
-	Usage of ./http-map:
+	Usage of ./http-geotrack-map:
 	  -http string
 	    	Server address & port (default ":8080")
 	  -mongodb string
