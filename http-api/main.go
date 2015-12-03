@@ -35,7 +35,7 @@ const (
 	jwtExpireDuration = time.Minute * 30    // время жизни JWT-токена
 	jwtIssuer         = "com.xyzrd.tracker" // идентификатор издателя
 	jwtSubject        = "user"              // тип информации
-	tracksLimit       = 10                  // лимит при отдаче списка треков
+	tracksLimit       = 200                 // лимит при отдаче списка треков
 )
 
 func main() {
