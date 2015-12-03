@@ -8,3 +8,4 @@
 - [`users`](../../tree/master/users) — работа с зарегистрированными пользователями
 - [`nats-service`](../../tree/master/nats-service) - сервис для взаимодействия с другими сервисами через NATS
 - [`http-map`](../../tree/master/http-map) — тестовый веб-сервер для отображения координат на карте
+- [`http-api`](../../tree/master/http-api) — веб-сервер с поддержкой REST API сервиса
