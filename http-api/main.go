@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rand"
 	"encoding/base64"
 	"errors"
 	"flag"
@@ -22,19 +23,17 @@ import (
 )
 
 var (
-	usersDB  *users.DB             // хранилище пользователей
-	placesDB *places.DB            // хранилище мест
-	tracksDB *tracks.DB            // хранилище треков
-	groupID  = users.SampleGroupID // уникальный идентификатор группы
-	// jwtCryptoKey используется подписи JWT
-	jwtCryptoKey = []byte(`очень секьюрная строка, используемая для подписи`)
-	log          *logger.Logger // вывод информации в лог
+	jwtCryptoKey []byte                // используется для подписи JWT
+	usersDB      *users.DB             // хранилище пользователей
+	placesDB     *places.DB            // хранилище мест
+	tracksDB     *tracks.DB            // хранилище треков
+	groupID      = users.SampleGroupID // уникальный идентификатор группы
+	log          *logger.Logger        // вывод информации в лог
 )
 
 const (
 	jwtExpireDuration = time.Minute * 30    // время жизни JWT-токена
 	jwtIssuer         = "com.xyzrd.tracker" // идентификатор издателя
-	jwtSubject        = "user"              // тип информации
 	tracksLimit       = 200                 // лимит при отдаче списка треков
 )
 
@@ -69,12 +68,13 @@ func main() {
 		log.Error("Error initializing TracksDB: %v", err)
 		return
 	}
-	// TODO: убрать по мере имплементации
-	_ = usersDB
-	_ = placesDB
-	_ = tracksDB
 	groupID = usersDB.GetSampleGroupID() // временная инициализация пользователей
-	// TODO: добавить случайную генерацию ключа при каждом запуске сервера
+	// генерация случайного ключа при каждом запуске сервера
+	jwtCryptoKey = make([]byte, 256)
+	if _, err := rand.Read(jwtCryptoKey); err != nil {
+		log.Error("Error creating signature key for JWT: %v", err)
+		return
+	}
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -100,7 +100,6 @@ func main() {
 // login читает заголовок запроса с HTTP Basic авторизацией, проверяет пользователя
 // по базе данных и отдает в ответ авторизационный ключ в формате JWT.
 func login(c *echo.Context) error {
-	log.Trace("->login")
 	// получаем пароль из заголовка HTTP Basic авторизации
 	username, password, ok := c.Request().BasicAuth()
 	if !ok {
@@ -126,12 +125,9 @@ func login(c *echo.Context) error {
 	if jwtIssuer != "" {
 		token.Claims["iss"] = jwtIssuer
 	}
-	token.Claims["sub"] = "user"
 	token.Claims["exp"] = time.Now().Add(jwtExpireDuration).Unix()
 	token.Claims["id"] = user.ID
 	token.Claims["group"] = user.GroupID
-	token.Claims["name"] = user.Name
-	token.Claims["icon"] = user.Icon
 	tokenString, err := token.SignedString(jwtCryptoKey)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
@@ -148,7 +144,6 @@ func login(c *echo.Context) error {
 // в заголовке в формате JWT. Разобранная информация сохраняется в контексте под именем "User".
 func jwtAuth(h echo.HandlerFunc) echo.HandlerFunc {
 	return func(c *echo.Context) error {
-		log.Trace("~>jwtAuth")
 		header := c.Request().Header
 		// пропускаем запросы WebSocket
 		if header.Get(echo.Upgrade) == echo.WebSocket {
@@ -157,7 +152,6 @@ func jwtAuth(h echo.HandlerFunc) echo.HandlerFunc {
 		// получаем заголовок авторизации ипроверяем, что авторизация с JWT-токеном
 		auth := header.Get("Authorization")
 		if len(auth) < 7 || strings.ToUpper(auth[0:6]) != "BEARER" {
-			log.Debug("Not BEARER:\n%v", auth)
 			return echo.NewHTTPError(http.StatusForbidden)
 		}
 		// разбираем и проверяем сам токен
@@ -167,8 +161,6 @@ func jwtAuth(h echo.HandlerFunc) echo.HandlerFunc {
 				err = fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 			} else if token.Claims["iss"] != jwtIssuer {
 				err = fmt.Errorf("Unexpected Issuer: %v", token.Claims["iss"])
-			} else if token.Claims["sub"] != jwtSubject {
-				err = fmt.Errorf("Unexpected Subject: %v", token.Claims["sub"])
 			} else if token.Claims["id"] == "" {
 				err = errors.New("Unexpected User ID")
 			} else if token.Claims["group"] == "" {
@@ -179,13 +171,22 @@ func jwtAuth(h echo.HandlerFunc) echo.HandlerFunc {
 		})
 		// возвращаем ошибку, если токен не валиден
 		if err != nil || !token.Valid {
-			log.Debug("Bad JWT-token: %v", err)
+			log.Warn("Bad JWT-token: %v", err)
+			return echo.NewHTTPError(http.StatusForbidden)
+		}
+		// проверяем, что пользователь есть и входит в эту группу
+		groupID := token.Claims["group"].(string)
+		userID := token.Claims["id"].(string)
+		exists, err := usersDB.Check(groupID, userID)
+		if err != nil {
+			return err
+		}
+		if !exists {
 			return echo.NewHTTPError(http.StatusForbidden)
 		}
 		// сохраняем данные в контексте запроса
-		c.Set("ID", token.Claims["id"])
-		c.Set("GroupID", token.Claims["group"])
-		// TODO: проверить, что пользователь есть и не заблокирован.
+		c.Set("GroupID", groupID)
+		c.Set("ID", userID)
 		// выполняем основной обработчик
 		return h(c)
 	}
@@ -194,54 +195,49 @@ func jwtAuth(h echo.HandlerFunc) echo.HandlerFunc {
 // getUserslList отдает список зарегистрированных пользователей, которые относятся к той же
 // группе, что и текущий пользователь.
 func getUserslList(c *echo.Context) error {
-	log.Trace("->getUserslList")
 	groupID := c.Get("GroupID").(string)    // получаем идентификатор группы
 	users, err := usersDB.GetUsers(groupID) // запрашиваем список пользователей
 	if err != nil {
 		return err
 	}
-	return c.JSONIndent(http.StatusOK, users, "", "\t")
+	return c.JSON(http.StatusOK, users)
 }
 
 // getPlaceslList список мест, зарегистрированны для группы пользователей
 func getPlaceslList(c *echo.Context) error {
-	log.Trace("->getPlaceslList")
 	groupID := c.Get("GroupID").(string) // получаем идентификатор группы
 	places, err := placesDB.Get(groupID) // запрашиваем список мест
 	if err != nil {
 		return err
 	}
-	return c.JSONIndent(http.StatusOK, places, "", "\t")
+	return c.JSON(http.StatusOK, places)
 }
 
 // getDeviceslList отдает список зарегистрированных устройств, которые относятся к той же
 // группе, что и текущий пользователь.
 func getDeviceslList(c *echo.Context) error {
-	log.Trace("->getDeviceslList")
 	// TODO: возвращать все устройства, а не только те, треки по которым сохранились
 	groupID := c.Get("GroupID").(string)             // получаем идентификатор группы
 	deviceIDs, err := tracksDB.GetDevicesID(groupID) // запрашиваем список устройств
 	if err != nil {
 		return err
 	}
-	return c.JSONIndent(http.StatusOK, deviceIDs, "", "\t")
+	return c.JSON(http.StatusOK, deviceIDs)
 }
 
 // getDeviceCurrent отдает последние данные с координатами браслета.
 func getDeviceCurrent(c *echo.Context) error {
-	log.Trace("->getDeviceCurrent")
 	groupID := c.Get("GroupID").(string)              // получаем идентификатор группы
 	deviceID := c.Param("device-id")                  // получаем идентификатор устройства
 	track, err := tracksDB.GetLast(groupID, deviceID) // запрашиваем список устройств
 	if err != nil {
 		return err
 	}
-	return c.JSONIndent(http.StatusOK, track, "", "\t")
+	return c.JSON(http.StatusOK, track)
 }
 
 // getDeviceHistory отдает всю историю с координатами трекинга браслета, разбивая ее на порции.
 func getDeviceHistory(c *echo.Context) error {
-	log.Trace("->getDeviceHistory")
 	groupID := c.Get("GroupID").(string) // получаем идентификатор группы
 	deviceID := c.Param("device-id")     // получаем идентификатор устройства
 	lastID := c.Query("last")            // получаем идентификатор последнего полученного трека
@@ -250,11 +246,10 @@ func getDeviceHistory(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return c.JSONIndent(http.StatusOK, tracks, "", "\t")
+	return c.JSON(http.StatusOK, tracks)
 }
 
 // postRegister регистрирует устройство, чтобы на него можно было отсылать push-уведомления.
 func postRegister(c *echo.Context) error {
-	log.Trace("->postRegister")
 	return echo.NewHTTPError(http.StatusNotImplemented)
 }

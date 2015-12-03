@@ -62,9 +62,18 @@ func (db *DB) Save(users ...*User) (err error) {
 func (db *DB) Get(login string) (user *User, err error) {
 	coll := db.GetCollection(CollectionName)
 	user = new(User)
-	// err = coll.FindId(login).One(user)
 	err = coll.Find(bson.M{"login": login}).One(user)
 	db.FreeCollection(coll)
+	return
+}
+
+// Check возвращает true, если пользователь с таким логином действительно существует и находится
+// в данной группе.
+func (db *DB) Check(groupID, login string) (exists bool, err error) {
+	coll := db.GetCollection(CollectionName)
+	count, err := coll.Find(bson.M{"login": login, "groupid": groupID}).Count()
+	db.FreeCollection(coll)
+	exists = (count == 1)
 	return
 }
 

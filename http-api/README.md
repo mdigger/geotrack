@@ -2,13 +2,24 @@
 
 ## Авторизация
 
-	curl -u login1:password1 http://localhost:8080/api/v1/login
+	curl -u login:password http://localhost:8080/api/v1/login
 
 В ответ приходит токен в формате JWT:
 
-	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NDkxMTgzNzAsImdyb3VwIjoiNTQwZGE1NDQtOTgxYy0xMWU1LWEyMmUtMjhjZmU5MWE4NmE3IiwiaWNvbiI6MCwiaWQiOiI1NjVmYTgzZTM0NWVkOTliOTdjNGVhNTYiLCJpc3MiOiJjb20ueHl6cmQudHJhY2tlciIsIm5hbWUiOiJVc2VyICMxIiwic3ViIjoidXNlciJ9.VYn38L5WwTgDP2Jfdvzz834EsPN-Q12NCZl1lzsyfho
+	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NDkxMjEyNjMsImdyb3VwIjoiNTQwZGE1NDQtOTgxYy0xMWU1LWEyMmUtMjhjZmU5MWE4NmE3IiwiaWQiOiI1NjVmYTgzZTM0NWVkOTliOTdjNGVhNTYiLCJpc3MiOiJjb20ueHl6cmQudHJhY2tlciJ9.Qpb8vt_BAYalpHJnMKmkjHN3pvxZNEtikhO6qkWXV5I
 
-Пока токен действителен в течение *30* минут, после чего его нужно получать заново. В дальнейшем, возможно, я пересмотрю свои взгляды на это.
+Пока токен действителен в течение *30* минут, после чего его нужно получать заново. Это сделано специально для отладки: в дальнейшем время жизни токена может увеличится до 72 часов.
+
+При каждой перезагрузке сервера случайным образом меняется ключ, которым подписывается данный токен. Поэтому придется получать этот токен заново: старый будет уже не действителен.
+
+В расшифрованном виде токен содержит время жизни, идентификатор сервиса и минимальную информацию об идентификаторах пользователя:
+
+	{
+	  "exp": 1449117063,
+	  "iss": "com.xyzrd.tracker",
+	  "id": "565fa83e345ed99b97c4ea56",
+	  "group": "540da544-981c-11e5-a22e-28cfe91a86a7",
+	}
 
 
 ## Получение списка пользователей
