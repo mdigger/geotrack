@@ -81,7 +81,7 @@ func main() {
 	e.Use(middleware.Gzip())
 
 	apiV1 := e.Group("/api/v1")                                   // группа URL для обработки API версии 1.0.
-	apiV1.Get("/login", login)                                    // аторизация пользователя
+	apiV1.Get("/login", login)                                    // авторизация пользователя
 	apiV1Sec := apiV1.Group("")                                   // группа запросов с авторизацией
 	apiV1Sec.Use(jwtAuth)                                         // добавляем проверку токена в заголовке
 	apiV1Sec.Get("/users", getUserslList)                         // возвращает список пользователей
@@ -149,7 +149,7 @@ func jwtAuth(h echo.HandlerFunc) echo.HandlerFunc {
 		if header.Get(echo.Upgrade) == echo.WebSocket {
 			return nil
 		}
-		// получаем заголовок авторизации ипроверяем, что авторизация с JWT-токеном
+		// получаем заголовок авторизации и проверяем, что авторизация с JWT-токеном
 		auth := header.Get("Authorization")
 		if len(auth) < 7 || strings.ToUpper(auth[0:6]) != "BEARER" {
 			return echo.NewHTTPError(http.StatusForbidden)
@@ -169,7 +169,7 @@ func jwtAuth(h echo.HandlerFunc) echo.HandlerFunc {
 			key = jwtCryptoKey // ключ, используемый для подписи
 			return
 		})
-		// возвращаем ошибку, если токен не валиден
+		// возвращаем ошибку, если нарушена целостность токена
 		if err != nil || !token.Valid {
 			log.Warn("Bad JWT-token: %v", err)
 			return echo.NewHTTPError(http.StatusForbidden)
@@ -241,7 +241,7 @@ func getDeviceHistory(c *echo.Context) error {
 	groupID := c.Get("GroupID").(string) // получаем идентификатор группы
 	deviceID := c.Param("device-id")     // получаем идентификатор устройства
 	lastID := c.Query("last")            // получаем идентификатор последнего полученного трека
-	// запрашиваем список устройств по странично
+	// запрашиваем список устройств постранично
 	tracks, err := tracksDB.Get(groupID, deviceID, tracksLimit, lastID)
 	if err != nil {
 		return err

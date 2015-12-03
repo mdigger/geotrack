@@ -2,7 +2,7 @@ package geo
 
 import "math"
 
-// CircleToPolygonSegments описывает количество сигментов, используемых для описания
+// CircleToPolygonSegments описывает количество сегментов, используемых для описания
 // круга в виде полигона.
 var CircleToPolygonSegments = 16
 

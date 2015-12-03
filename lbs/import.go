@@ -15,7 +15,7 @@ import (
 )
 
 // Filters описывает фильтры для выборки информации при импорте. Только данные,
-// совпадающие с данным фильром будут импортированы.
+// совпадающие с данным фильтром будут импортированы.
 type Filters struct {
 	Radio   map[string]bool // типы сетей
 	Country map[uint16]bool // коды стран
@@ -26,7 +26,7 @@ type Data struct {
 	Timestamp time.Time  // временная метка
 }
 
-// ImportCSV импортирует данные о вышках сотовых станций и их координта из CSV-файла
+// ImportCSV импортирует данные о вышках сотовых станций и их координаты из CSV-файла
 // в хранилище.
 func (db *DB) ImportCSV(filename string, filter *Filters) {
 	coll := db.GetCollection(CollectionName)

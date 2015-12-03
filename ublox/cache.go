@@ -24,8 +24,8 @@ type Cache struct {
 }
 
 // InitCache возвращает инициализированное хранилище кеша для данных с эфемеридами.
-// В процессе инициализации проверяет наличие необходимых индексов и создает, в случе их
-// отсутствия. Если идексы уже существуют, но отличиются от тех, что задаются по умолчанию,
+// В процессе инициализации проверяет наличие необходимых индексов и создает, в случае их
+// отсутствия. Если индексы уже существуют, но отличаются от тех, что задаются по умолчанию,
 // то возвращает ошибку.
 func InitCache(mdb *mongo.DB, token string) (cache *Cache, err error) {
 	cache = &Cache{
@@ -55,7 +55,7 @@ type storeData struct {
 }
 
 // Get возвращает данные эфемерид для указанной точки. Данные возвращаются из кеша, если
-// есть для близлежайшей точки, либо запрашиваются с сервера U-blox в противном случае.
+// есть для ближайшей точки, либо запрашиваются с сервера U-blox в противном случае.
 func (c *Cache) Get(point *geo.Point, profile *Profile) (data []byte, err error) {
 	coll := c.GetCollection(CollectionName)
 	defer c.FreeCollection(coll)
@@ -75,7 +75,7 @@ func (c *Cache) Get(point *geo.Point, profile *Profile) (data []byte, err error)
 		log.Printf("UBLOX: %v from cache", point)
 		data = cacheData.Data
 		return
-	case mgo.ErrNotFound: // данные в кеше не найдены - запрашиваем у сервера
+	case mgo.ErrNotFound: // данные в кэше не найдены - запрашиваем у сервера
 	default: // ошибка получения данных
 		log.Println("UBLOX cache error:", err)
 	}

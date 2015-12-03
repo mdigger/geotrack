@@ -8,7 +8,7 @@ type DB struct {
 	dbname  string
 }
 
-// Connect устаналвивает соединение с хранилищем данных и возвращает его.
+// Connect устанавливает соединение с хранилищем данных и возвращает его.
 func Connect(url string) (db *DB, err error) {
 	dialInfo, err := mgo.ParseURL(url)
 	if err != nil {
