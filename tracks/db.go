@@ -87,15 +87,15 @@ var selector = bson.M{"time": 1, "point": 1}
 //
 // Метод поддерживает разбиение результатов на отдельные блоки: limit указывает максимальное
 // количество отдаваемых в ответ данных, а lastID — идентификатор последнего полученного трека.
-func (db *DB) Get(groupID, deviceID string, limit int, lastID bson.ObjectId) (tracks []*Track, err error) {
+func (db *DB) Get(groupID, deviceID string, limit int, lastID string) (tracks []*Track, err error) {
 	coll := db.GetCollection(CollectionName)
 	// ищем все треки с указанного устройства
 	var search = bson.M{
 		"groupid":  groupID,
 		"deviceid": deviceID,
 	}
-	if lastID.Valid() {
-		search["_id"] = bson.M{"$lt": lastID} // старее последнего полученного идентификатора
+	if lastID != "" && bson.IsObjectIdHex(lastID) {
+		search["_id"] = bson.M{"$lt": bson.ObjectIdHex(lastID)} // старее последнего полученного идентификатора
 	}
 	// используем обратную сортировку: свежие записи должны идти раньше более старых
 	query := coll.Find(search).Select(selector).Sort("-$natural")

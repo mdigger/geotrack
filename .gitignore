@@ -6,3 +6,5 @@ http-map/http-map
 lbs/lbs-import/lbs-import
 
 nats-service/nats-service
+
+http-api/http-api

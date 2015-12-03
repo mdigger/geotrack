@@ -92,7 +92,7 @@ func TestBD(t *testing.T) {
 	var lastId bson.ObjectId
 	for {
 		// fmt.Println("lastID:", lastId.Hex())
-		tracks, err := db.Get(groupID, deviceID, 5, lastId)
+		tracks, err := db.Get(groupID, deviceID, 5, lastId.Hex())
 		if err != nil {
 			t.Fatal(err)
 		}

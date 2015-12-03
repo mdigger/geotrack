@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mdigger/geotrack/mongo"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -19,13 +20,20 @@ type DB struct {
 // о зарегистрированных пользователях системы.
 func InitDB(mdb *mongo.DB) (db *DB, err error) {
 	db = &DB{mdb}
+	coll := mdb.GetCollection(CollectionName)
+	err = coll.EnsureIndex(mgo.Index{
+		Key:    []string{"login"},
+		Unique: true,
+	})
+	mdb.FreeCollection(coll)
 	return
 }
 
 // User описывает информацию о пользователе системы.
 type User struct {
 	ID       bson.ObjectId `bson:"_id"` // уникальный идентификатор пользователя
-	GroupID  string        // уникальный идентификатор группы (UUID)
+	Login    string        // логин пользователя
+	GroupID  string        `json:",omitempty"`                   // уникальный идентификатор группы (UUID)
 	Name     string        `bson:",omitempty" json:",omitempty"` // отображаемое имя
 	Icon     byte          // идентификатор иконки пользователя
 	Password []byte        `json:"-"` // хеш пароля пользователя
@@ -51,10 +59,11 @@ func (db *DB) Save(users ...*User) (err error) {
 }
 
 // Get возвращает информацию о пользователе с указанным идентификатором.
-func (db *DB) Get(id bson.ObjectId) (user *User, err error) {
+func (db *DB) Get(login string) (user *User, err error) {
 	coll := db.GetCollection(CollectionName)
 	user = new(User)
-	err = coll.FindId(id).One(user)
+	// err = coll.FindId(login).One(user)
+	err = coll.Find(bson.M{"login": login}).One(user)
 	db.FreeCollection(coll)
 	return
 }
@@ -84,5 +93,15 @@ func (db *DB) GetGroup(groupID string) (info *GroupInfo, err error) {
 	for i, user := range users {
 		info.Users[i] = fmt.Sprintf("%s-%d", user.ID.Hex(), user.Icon)
 	}
+	return
+}
+
+// GetUsers возвращает список всех пользователей, входящих в указанную группу.
+func (db *DB) GetUsers(groupID string) (users []*User, err error) {
+	coll := db.GetCollection(CollectionName)
+	users = make([]*User, 0)
+	selector := bson.M{"groupid": 0, "password": 0}
+	err = coll.Find(bson.M{"groupid": groupID}).Select(selector).All(&users)
+	db.FreeCollection(coll)
 	return
 }
