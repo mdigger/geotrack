@@ -108,7 +108,8 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 		return err
 	}
 	// уникальный идентификатор группы пока для примера задан явно
-	groupID := users.SampleGroupID
+	// groupID := users.SampleGroupID
+	groupID := usersDB.GetSampleGroupID()
 	nce.Subscribe(serviceNameIMEI, func(_, reply, data string) {
 		log.Println("IMEI:", data)
 		group, err := usersDB.GetGroup(groupID)
