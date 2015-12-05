@@ -102,7 +102,6 @@ func (db *DB) GetGroup(groupID string) (info *GroupInfo, err error) {
 	for i, user := range users {
 		info.Users[i] = fmt.Sprintf("%s-%d", user.ID.Hex(), user.Icon)
 	}
-	fmt.Println(info.GroupID, info.Users)
 	return
 }
 
