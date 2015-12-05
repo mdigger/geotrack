@@ -40,11 +40,6 @@ func (p *Point) String() string {
 	return fmt.Sprintf("[%f,%f]", p.Longitude(), p.Latitude())
 }
 
-// JSON возвращает строку ввиде json.
-func (p *Point) JSON() string {
-	return fmt.Sprintf(`{"lat"=%v,"lon"=%v}`, p.Latitude(), p.Longitude())
-}
-
 // Geo возвращает представление точки в формате GeoJSON.
 func (p *Point) Geo() interface{} {
 	if p == nil {
