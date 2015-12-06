@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -35,7 +36,14 @@ func (t *Template) Render(w io.Writer, name string, data interface{}) error {
 func main() {
 	mongoURL := flag.String("mongodb", "mongodb://localhost/watch", "MongoDB connection URL")
 	addr := flag.String("http", ":8080", "Server address & port")
+	docker := flag.Bool("docker", false, "for docker")
 	flag.Parse()
+
+	// Если запускается внутри контейнера
+	if *docker {
+		tmp := os.Getenv("MONGODB")
+		mongoURL = &tmp
+	}
 
 	mdb, err := mongo.Connect(*mongoURL)
 	if err != nil {

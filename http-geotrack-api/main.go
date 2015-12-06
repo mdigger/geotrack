@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/labstack/echo"
@@ -33,7 +34,14 @@ const (
 func main() {
 	addr := flag.String("http", ":8080", "Server address & port")
 	mongoURL := flag.String("mongodb", "mongodb://localhost/watch", "MongoDB connection URL")
+	docker := flag.Bool("docker", false, "for docker")
 	flag.Parse()
+
+	// Если запускается внутри контейнера
+	if *docker {
+		tmp := os.Getenv("MONGODB")
+		mongoURL = &tmp
+	}
 
 	e := echo.New()    // инициализируем HTTP-обработку
 	e.Debug()          // режим отладки

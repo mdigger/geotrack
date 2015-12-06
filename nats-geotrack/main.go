@@ -27,8 +27,17 @@ var ubloxToken = "I6KKO4RU_U2DclBM9GVyrA"
 func main() {
 	mongoURL := flag.String("mongodb", "mongodb://localhost/watch", "MongoDB connection URL")
 	natsURL := flag.String("nats", nats.DefaultURL, "NATS connection URL")
+	docker := flag.Bool("docker", false, "for docker")
 	flag.StringVar(&ubloxToken, "ublox", ubloxToken, "U-Blox token")
 	flag.Parse()
+
+	// Если запускается внутри контейнера
+	if *docker {
+		tmp1 := os.Getenv("NATSADDR")
+		tmp2 := os.Getenv("MONGODB")
+		natsURL = &tmp1
+		mongoURL = &tmp2
+	}
 
 	log.Print("Connecting to MongoDB...")
 	mdb, err := mongo.Connect(*mongoURL)
