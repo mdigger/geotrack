@@ -59,6 +59,7 @@ func TestBD(t *testing.T) {
 			GroupID:  groupID,
 			Time:     currentTime,
 			Point:    currentPoint,
+			Type:     uint8(rand.Int31n(5)),
 		}
 		if err := db.Add(track); err != nil {
 			t.Fatal(err)
