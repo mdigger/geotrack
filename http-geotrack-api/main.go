@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"flag"
 	"net/http"
 	"os"
@@ -81,16 +82,17 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(middleware.Gzip())
 
-	apiV1 := e.Group("/api/v1")                                   // группа URL для обработки API версии 1.0.
-	apiV1.Get("/login", login)                                    // авторизация пользователя
-	apiV1Sec := apiV1.Group("")                                   // группа запросов с авторизацией
-	apiV1Sec.Use(auth)                                            // добавляем проверку токена в заголовке
-	apiV1Sec.Get("/users", getUserslList)                         // возвращает список пользователей
-	apiV1Sec.Get("/places", getPlaceslList)                       // возвращает список интересующих мест
-	apiV1Sec.Get("/devices", getDeviceslList)                     // возвращает список устройств
-	apiV1Sec.Get("/devices/:device-id", getDeviceCurrent)         // возвращает последнюю точку трекинга устройства
-	apiV1Sec.Get("/devices/:device-id/history", getDeviceHistory) // возвращает список треков устройства
-	apiV1Sec.Post("/register", postRegister)                      // регистрирует устройство для отправки push-сообщений
+	apiV1 := e.Group("/api/v1")                                    // группа URL для обработки API версии 1.0.
+	apiV1.Get("/login", login)                                     // авторизация пользователя
+	apiV1Sec := apiV1.Group("")                                    // группа запросов с авторизацией
+	apiV1Sec.Use(auth)                                             // добавляем проверку токена в заголовке
+	apiV1Sec.Get("/users", getUserslList)                          // возвращает список пользователей
+	apiV1Sec.Get("/places", getPlaceslList)                        // возвращает список интересующих мест
+	apiV1Sec.Get("/devices", getDeviceslList)                      // возвращает список устройств
+	apiV1Sec.Get("/devices/:device-id", getDeviceCurrent)          // возвращает последнюю точку трекинга устройства
+	apiV1Sec.Get("/devices/:device-id/history", getDeviceHistory)  // возвращает список треков устройства
+	apiV1Sec.Post("/register/:push-type", postRegister)            // регистрирует устройство для отправки push-сообщений
+	apiV1Sec.Delete("/register/:push-type/:token", deleteRegister) // удаляет токен из хранилища
 
 	log.Info("Starting HTTP server at %q...", *addr)
 	e.Run(*addr)
@@ -223,5 +225,46 @@ func getDeviceHistory(c *echo.Context) error {
 
 // postRegister регистрирует устройство, чтобы на него можно было отсылать push-уведомления.
 func postRegister(c *echo.Context) error {
+	pushType := c.Param("push-type") // получаем идентификатор типа уведомлений
+	switch pushType {
+	case "apns": // Apple Push Notification
+	case "gcm": // Google Cloud Messages
+	default: // не поддерживаемы тип
+		return echo.NewHTTPError(http.StatusNotFound)
+	}
+	groupID := c.Get("GroupID").(string) // идентификатор группы
+	userID := c.Get("ID").(string)       // идентификатор пользователя
+	token := c.Form("token")             // токен устройства
+	if len(token) != 32 {
+		return echo.NewHTTPError(http.StatusBadRequest, "bad token size")
+	}
+	btoken, err := hex.DecodeString(token)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "bad token format")
+	}
+	_ = btoken
+	return echo.NewHTTPError(http.StatusNotImplemented)
+}
+
+// deleteRegister регистрирует устройство, чтобы на него можно было отсылать push-уведомления.
+func deleteRegister(c *echo.Context) error {
+	pushType := c.Param("push-type") // получаем идентификатор типа уведомлений
+	switch pushType {
+	case "apns": // Apple Push Notification
+	case "gcm": // Google Cloud Messages
+	default: // не поддерживаемы тип
+		return echo.NewHTTPError(http.StatusNotFound)
+	}
+	groupID := c.Get("GroupID").(string) // идентификатор группы
+	userID := c.Get("ID").(string)       // идентификатор пользователя
+	token := c.Param("token")            // токен устройства
+	if len(token) != 32 {
+		return echo.NewHTTPError(http.StatusBadRequest, "bad token size")
+	}
+	btoken, err := hex.DecodeString(token)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "bad token format")
+	}
+	_ = btoken
 	return echo.NewHTTPError(http.StatusNotImplemented)
 }

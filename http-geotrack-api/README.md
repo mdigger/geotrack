@@ -199,3 +199,13 @@
 			"Point": [37.674651057691236, 55.732965217181935]
 		}
 	]
+
+## Регистрация токена устройства
+
+	curl -H "Authorization: Bearer <token>" -d "deviceid=<deviceID>&token=<token_string>" http://localhost:8080/api/v1/register/apns
+
+Регистрирует указанный токен устройства в хранилище, чтобы можно было отправлять на это устройства сообщения. Используется метод HTTP POST. В качестве параметров передаются уникальный идентификатор устройства и сам токен устройства, полученный от сервиса Apple для получения push-уведомлений. Так же в URL запроса указывается тип: Apple Push Notification — `apns`, Google Cloud Messaging — `gcm`.
+
+Для удаление токена устройства используется аналогичный запрос с методом HTTP DELETE:
+
+	curl -H "Authorization: Bearer <token>" -X DELETE http://localhost:8080/api/v1/register/apns/<token>
