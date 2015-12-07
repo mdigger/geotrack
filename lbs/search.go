@@ -30,7 +30,7 @@ func InitDB(mdb *mongo.DB) (db *DB, err error) {
 	db = &DB{mdb}
 	coll := mdb.GetCollection(CollectionName)
 	err = coll.EnsureIndex(mgo.Index{
-		Key:      []string{"radio", "mcc", "mnc", "area", "cell"},
+		Key:      []string{"mcc", "mnc", "area", "cell"},
 		Unique:   true,
 		DropDups: true,
 	})
@@ -40,27 +40,24 @@ func InitDB(mdb *mongo.DB) (db *DB, err error) {
 
 // Key описывает ключ для поиска информации по LBS.
 type Key struct {
-	Radio string // тип
-	MCC   uint16 // country code  (250 - Россия, 255 - Украина, Беларусь - 257)
-	MNC   uint32 // operator code
-	Area  uint16 // the base station cell number
-	Cell  uint32 // base station number
+	MCC  uint16 // country code  (250 - Россия, 255 - Украина, Беларусь - 257)
+	MNC  uint32 // operator code
+	Area uint16 // the base station cell number
+	Cell uint32 // base station number
 }
 
 // Search ищет и вычисляет координаты, переданные в запросе, на основании данных вышек сотовой
 // связи. Если данных не достаточно или необходимая для вычислений информация не найдена в
-// хранилище, то возвращается ошибка. В запросе так же необходимо передать тип радио, т.к.
-// хранилище поддерживает работу с несколькими типами сотовой связи.
-func (db *DB) Search(radio string, req *Request) (point *geo.Point, err error) {
+// хранилище, то возвращается ошибка.
+func (db *DB) Search(req *Request) (point *geo.Point, err error) {
 	if req == nil {
 		return nil, ErrEmptyRequest
 	}
 	coll := db.GetCollection(CollectionName)
 	defer db.FreeCollection(coll)
 	search := Key{
-		Radio: radio,
-		MCC:   req.MCC,
-		MNC:   req.MNC,
+		MCC: req.MCC,
+		MNC: req.MNC,
 	}
 	selector := bson.M{"point": 1, "_id": 0}
 	var sm, slat, slon float64
@@ -91,17 +88,11 @@ func (db *DB) Search(radio string, req *Request) (point *geo.Point, err error) {
 	return
 }
 
-// SearchGSM полностью аналогичен методу Search за тем исключение, что обрабатывает только
-// запросы к вышкам GSM и игнорирует все остальные.
-func (db *DB) SearchGSM(req *Request) (point *geo.Point, err error) {
-	return db.Search("GSM", req)
-}
-
 // SearchLBS ищет координаты, разбирая предварительно строку с запросом в формате LBS.
 func (db *DB) SearchLBS(s string) (point *geo.Point, err error) {
 	req, err := Parse(s)
 	if err != nil {
 		return
 	}
-	return db.SearchGSM(req)
+	return db.Search(req)
 }

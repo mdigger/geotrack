@@ -101,11 +101,10 @@ func (db *DB) ImportCSV(filename string, filter *Filters) {
 		}
 
 		key := Key{
-			Radio: radio,
-			MCC:   uint16(mcc),
-			MNC:   uint32(mnc),
-			Area:  uint16(area),
-			Cell:  uint32(cell),
+			MCC:  uint16(mcc),
+			MNC:  uint32(mnc),
+			Area: uint16(area),
+			Cell: uint32(cell),
 		}
 		data := Data{
 			Point:     geo.NewPoint(lon, lat),

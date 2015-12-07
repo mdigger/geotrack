@@ -21,7 +21,7 @@ func main() {
 	log.SetFlags(log.Ltime)
 	filename := flag.String("csvfile", "cell_towers.csv", "csv file with data")
 	mongourl := flag.String("mongo", "mongodb://localhost/watch", "mongoDB connection URL")
-	radiofilter := flag.String("radio", "GSM", "filter for radio (comma separated)")
+	radiofilter := flag.String("radio", "GSM,UMTS", "filter for radio (comma separated)")
 	countryfilter := flag.String("country", "250,255,257", "filter for country (comma separated)")
 	flag.Parse()
 
