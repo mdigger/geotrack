@@ -26,7 +26,7 @@ func main() {
 	flag.Parse()
 
 	// устанавливаем соединение с сервером MongoDB
-	log.Print("Connecting to MongoDB...")
+	log.Printf("Connecting to MongoDB %q...", *mongourl)
 	mdb, err := mongo.Connect(*mongourl)
 	if err != nil {
 		log.Println("Error connecting to MongoDB:", err)
