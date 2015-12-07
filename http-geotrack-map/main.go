@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 
+	"gopkg.in/mgo.v2"
+
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 
@@ -96,6 +98,9 @@ func current(c *echo.Context) error {
 	deviceID := c.Param("deviceid")
 	track, err := db.GetLast(groupID, deviceID)
 	if err != nil {
+		if err == mgo.ErrNotFound {
+			return echo.NewHTTPError(http.StatusNotFound)
+		}
 		return err
 	}
 	return c.Render(http.StatusOK, "current.html", track)
@@ -105,6 +110,9 @@ func history(c *echo.Context) error {
 	deviceID := c.Param("deviceid")
 	dayTracks, err := db.GetDay(groupID, deviceID)
 	if err != nil {
+		if err == mgo.ErrNotFound {
+			return echo.NewHTTPError(http.StatusNotFound)
+		}
 		return err
 	}
 	data := struct {
