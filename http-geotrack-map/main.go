@@ -20,9 +20,9 @@ import (
 )
 
 var (
-	db          *tracks.DB
-	groupPlaces []*places.Place
-	groupID     = users.SampleGroupID
+	tracksDB *tracks.DB
+	placesDB *places.DB
+	groupID  = users.SampleGroupID
 )
 
 // Template provides HTML template rendering
@@ -55,20 +55,15 @@ func main() {
 	defer mdb.Close()
 
 	// инициализируем хранилище с информацией о треках
-	db, err = tracks.InitDB(mdb)
+	tracksDB, err = tracks.InitDB(mdb)
 	if err != nil {
 		log.Println("Error initializing TrackDB:", err)
 		return
 	}
 	// инициализируем хранилище с информацией о местах
-	placesDB, err := places.InitDB(mdb)
+	placesDB, err = places.InitDB(mdb)
 	if err != nil {
 		log.Println("Error initializing PlaceDB:", err)
-		return
-	}
-	groupPlaces, err = placesDB.Get(groupID)
-	if err != nil {
-		log.Println("Error getting PlaceDB:", err)
 		return
 	}
 
@@ -86,8 +81,7 @@ func main() {
 }
 
 func index(c *echo.Context) error {
-	// получаем список устройств
-	deviceids, err := db.GetDevicesID(groupID)
+	deviceids, err := tracksDB.GetDevicesID(groupID)
 	if err != nil {
 		return err
 	}
@@ -96,7 +90,7 @@ func index(c *echo.Context) error {
 
 func current(c *echo.Context) error {
 	deviceID := c.Param("deviceid")
-	track, err := db.GetLast(groupID, deviceID)
+	track, err := tracksDB.GetLast(groupID, deviceID)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return echo.NewHTTPError(http.StatusNotFound)
@@ -108,11 +102,15 @@ func current(c *echo.Context) error {
 
 func history(c *echo.Context) error {
 	deviceID := c.Param("deviceid")
-	dayTracks, err := db.GetDay(groupID, deviceID)
+	dayTracks, err := tracksDB.GetDay(groupID, deviceID)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return echo.NewHTTPError(http.StatusNotFound)
 		}
+		return err
+	}
+	groupPlaces, err := placesDB.Get(groupID)
+	if err != nil && err != mgo.ErrNotFound {
 		return err
 	}
 	data := struct {
