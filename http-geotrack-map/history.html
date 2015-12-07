@@ -32,12 +32,12 @@
                 "<tr><td>Date:</td><td>{{$element.Time}}</td></tr>"+
                 "<tr><td>Point:</td><td>{{$element.Point}}</td></tr>"+
                 "<tr><td>ID:</td><td>{{$element.ID.Hex}}</td></tr>"+
-                "<tr><td>Type:</td><td>{{if ge $element.Type 4}}Wi-Fi{{else if ge $element.Type 2}}LBS{{else if ge $element.Type 1}}GPS{{else}}Unknown{{end}}</td></tr>"+
+                "<tr><td>Type:</td><td>{{if ge $element.Type 4}}LBS{{else if ge $element.Type 2}}Wi-Fi{{else if ge $element.Type 1}}GPS{{else}}Unknown{{end}}</td></tr>"+
                 "</table>", 
              clusterCaption: "# {{$index}}", 
              hintContent: "{{$element.Time}}"
            },
-           options: {iconColor: "{{if ge $element.Type 4}}orange{{else if ge $element.Type 2}}red{{else if ge $element.Type 1}}green{{else}}gray{{end}}"}},{{end}}
+           options: {iconColor: "{{if ge $element.Type 4}}red{{else if ge $element.Type 2}}orange{{else if ge $element.Type 1}}green{{else}}gray{{end}}"}},{{end}}
         ]
       };
       var objectManager = new ymaps.ObjectManager({groupByCoordinates: true, clusterize: true});
