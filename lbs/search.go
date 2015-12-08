@@ -94,5 +94,13 @@ func (db *DB) SearchLBS(s string) (point *geo.Point, err error) {
 	if err != nil {
 		return
 	}
-	return db.Search(req)
+	point, err = db.Search(req)
+	// TODO: убрать сохранение тестовых данных
+	coll := db.GetCollection(CollectionName + ".test")
+	_, err = coll.UpsertId(s, bson.M{"point": point})
+	if err != nil {
+		log.Println("LBS test error:", err)
+	}
+	db.FreeCollection(coll)
+	return
 }
