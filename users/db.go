@@ -25,6 +25,13 @@ func InitDB(mdb *mongo.DB) (db *DB, err error) {
 		Key:    []string{"login"},
 		Unique: true,
 	})
+	if err != nil {
+		return
+	}
+	err = coll.EnsureIndexKey("groupid")
+	if err != nil {
+		return
+	}
 	mdb.FreeCollection(coll)
 	return
 }
@@ -39,25 +46,6 @@ type User struct {
 	Password []byte        `json:"-"` // хеш пароля пользователя
 }
 
-// Save сохраняет информацию о пользователях в хранилище.
-// Если пользователь с таким идентификатором уже существовал, то его данные обновятся.
-// Если пользователя с таким идентификатором не существует или он пустой, то в хранилище
-// добавится новый пользователь. В последнем случае так же пользователю будет сгенерирован
-// новый уникальный идентификатор.
-func (db *DB) Save(users ...*User) (err error) {
-	coll := db.GetCollection(CollectionName)
-	for _, user := range users {
-		if !user.ID.Valid() {
-			user.ID = bson.NewObjectId()
-		}
-		if _, err = coll.UpsertId(user.ID, user); err != nil {
-			break
-		}
-	}
-	db.FreeCollection(coll)
-	return
-}
-
 // Get возвращает информацию о пользователе с указанным идентификатором.
 func (db *DB) Get(login string) (user *User, err error) {
 	coll := db.GetCollection(CollectionName)
@@ -67,13 +55,31 @@ func (db *DB) Get(login string) (user *User, err error) {
 	return
 }
 
-// Check возвращает true, если пользователь с таким логином действительно существует и находится
-// в данной группе.
-func (db *DB) Check(groupID, login string) (exists bool, err error) {
+// Check возвращает true, если пользователь с таким идентификатором действительно существует и
+// находится в данной группе.
+func (db *DB) Check(groupID string, userID bson.ObjectId) (exists bool, err error) {
 	coll := db.GetCollection(CollectionName)
-	count, err := coll.Find(bson.M{"login": login, "groupid": groupID}).Count()
+	count, err := coll.Find(bson.M{"_id": userID, "groupid": groupID}).Count()
 	db.FreeCollection(coll)
 	exists = (count == 1)
+	return
+}
+
+// Save сохраняет информацию о пользователях в хранилище.
+// Если пользователь с таким идентификатором уже существовал, то его данные обновятся.
+// Если пользователя с таким идентификатором не существует или он пустой, то в хранилище
+// добавится новый пользователь. В последнем случае так же пользователю будет сгенерирован
+// новый уникальный идентификатор.
+func (db *DB) Save(user *User) (err error) {
+	coll := db.GetCollection(CollectionName)
+	defer db.FreeCollection(coll)
+	if !user.ID.Valid() {
+		user.ID = bson.NewObjectId()
+	}
+	_, err = coll.UpsertId(user.ID, user)
+	if err != nil {
+		return
+	}
 	return
 }
 

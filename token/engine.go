@@ -52,7 +52,7 @@ func (e *Engine) Token(items map[string]interface{}) (string, error) {
 	if e.expire != 0 { // время жизни токена
 		token.Claims["exp"] = time.Now().Add(e.expire).Unix()
 	}
-	return token.SignedString(e.CryptoKey)
+	return token.SignedString(e.cryptoKey)
 }
 
 // verify является функцией для проверки целостности токена.
@@ -72,8 +72,10 @@ func (e *Engine) verify(token *jwt.Token) (key interface{}, err error) {
 // Parse разбирает токен, проверяет его валидность и возвращает данные из него.
 func (e *Engine) Parse(tokenString string) (data map[string]interface{}, err error) {
 	token, err := jwt.Parse(tokenString, e.verify)
-	data = token.Claims
-	return
+	if err != nil {
+		return nil, err
+	}
+	return token.Claims, nil
 }
 
 // ParseRequest разбирает токен из HTTP-запроса. Токен может быть передан как в заголовке

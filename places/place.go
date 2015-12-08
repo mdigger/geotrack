@@ -1,6 +1,8 @@
 package places
 
 import (
+	"errors"
+
 	"github.com/mdigger/geotrack/geo"
 	"github.com/mdigger/geotrack/mongo"
 	"github.com/mdigger/geotrack/tracks"
@@ -33,48 +35,25 @@ type Place struct {
 	Geo     interface{}   `json:"-"`                            // описание координат места для поиска
 }
 
-// Save сохраняет описание места или нескольких для указанной группы в хранилище.
-// В объекте должно быть указано хотя бы одно описание места: либо круг, либо полигон.
-// Если указано и то, и другое, то используется только круг. Если не указано ни того,
-// ни другого, то такая запись либо игнорируется, либо удаляется, если указан корректный
-// ее идентификатор. В процессе сохранения всегда идентификатор группы заменяется на
-// указанный в параметрах вызова.
-func (db *DB) Save(groupID string, places ...*Place) (err error) {
+var (
+	// ErrBadPlaceData возвращается, если в описании места не указано ни круга, ни полигона.
+	ErrBadPlaceData = errors.New("bad place data")
+	ErrBadID        = errors.New("bad place id")
+)
+
+func (db *DB) Get(groupID string, placeID bson.ObjectId) (place *Place, err error) {
 	coll := db.GetCollection(CollectionName)
-	for _, place := range places {
-		// анализируем описание места и формируем данные для индексации
-		if place.Circle != nil {
-			place.Polygon = nil
-			place.Geo = place.Circle.Geo()
-		} else if place.Polygon != nil {
-			place.Circle = nil
-			place.Geo = place.Polygon.Geo()
-		} else {
-			// удаляем, если нет данных и нормальный идентификатор
-			// в противном случае — просто игнорируем
-			if place.ID.Valid() {
-				if err = coll.RemoveId(place.ID); err != nil {
-					break
-				}
-			}
-			continue
-		}
-		place.GroupID = groupID // восстанавливаем группу, если вдруг она пропала
-		if !place.ID.Valid() {
-			place.ID = bson.NewObjectId()
-		}
-		if _, err = coll.UpsertId(place.ID, place); err != nil {
-			break
-		}
-	}
+	place = new(Place)
+	selector := bson.M{"groupid": 0, "geo": 0}
+	err = coll.Find(bson.M{"_id": placeID, "groupid": groupID}).Select(selector).All(&place)
 	db.FreeCollection(coll)
 	return
 }
 
-// Get возвращает список всех описаний мест для указанной группы.
+// GetAll возвращает список всех описаний мест для указанной группы.
 // Результат содержит только информацию с описание круга или полигона. Информация
 // о группе и сформированном внутреннем индексном объекте Geo не возвращается.
-func (db *DB) Get(groupID string) (places []*Place, err error) {
+func (db *DB) GetAll(groupID string) (places []*Place, err error) {
 	coll := db.GetCollection(CollectionName)
 	places = make([]*Place, 0)
 	selector := bson.M{"groupid": 0, "geo": 0}
@@ -83,11 +62,44 @@ func (db *DB) Get(groupID string) (places []*Place, err error) {
 	return
 }
 
+// Save сохраняет описание места в хранилище.
+// В объекте должно быть указано хотя бы одно описание места: либо круг, либо полигон.
+// Если указано и то, и другое, то используется только круг. Если не указано ни того,
+// ни другого, то такая запись игнорируется.
+func (db *DB) Save(place *Place) (id bson.ObjectId, err error) {
+	coll := db.GetCollection(CollectionName)
+	defer db.FreeCollection(coll)
+	// анализируем описание места и формируем данные для индексации
+	if place.Circle != nil {
+		place.Polygon = nil
+		place.Geo = place.Circle.Geo()
+	} else if place.Polygon != nil {
+		place.Circle = nil
+		place.Geo = place.Polygon.Geo()
+	} else {
+		return "", ErrBadPlaceData
+	}
+	if !place.ID.Valid() {
+		place.ID = bson.NewObjectId()
+	}
+	if _, err = coll.UpsertId(place.ID, place); err != nil {
+		return "", err
+	}
+	return place.ID, nil
+}
+
+func (db *DB) Delete(groupID string, placeID bson.ObjectId) (err error) {
+	coll := db.GetCollection(CollectionName)
+	err = coll.Remove(bson.M{"_id": placeID, "groupid": groupID})
+	db.FreeCollection(coll)
+	return
+}
+
 // Track возвращает список всех идентификаторов мест, определенных для группы,
 // которым соответствует данная точка трекера.
-func (db *DB) Track(track *tracks.TrackData) (placeIDs []string, err error) {
+func (db *DB) Track(track *tracks.TrackData) (placeIDs []*bson.ObjectId, err error) {
 	coll := db.GetCollection(CollectionName)
-	ids := make([]*bson.ObjectId, 0)
+	placeIDs = make([]*bson.ObjectId, 0)
 	err = coll.Find(bson.M{
 		"groupid": track.GroupID,
 		"geo": bson.M{
@@ -95,10 +107,6 @@ func (db *DB) Track(track *tracks.TrackData) (placeIDs []string, err error) {
 				"$geometry": track.Point.Geo(),
 			},
 		},
-	}).Distinct("_id", &ids)
-	placeIDs = make([]string, len(ids))
-	for i, id := range ids {
-		placeIDs[i] = id.Hex()
-	}
+	}).Distinct("_id", &placeIDs)
 	return
 }

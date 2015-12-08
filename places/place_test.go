@@ -67,9 +67,13 @@ func TestPlaces(t *testing.T) {
 			geo.NewPoint(37.6256, 55.7522),
 		), Name: "Знаменский монастырь"},
 	}
-	_ = places
-	if err := db.Save(groupID, places...); err != nil {
-		t.Fatal(err)
+	for _, place := range places {
+		place.GroupID = groupID
+		id, err := db.Save(place)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Println("id:", id)
 	}
 	places, err = db.Get(groupID)
 	if err != nil {
