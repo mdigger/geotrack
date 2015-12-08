@@ -109,7 +109,7 @@ func history(c *echo.Context) error {
 		}
 		return err
 	}
-	groupPlaces, err := placesDB.Get(groupID)
+	groupPlaces, err := placesDB.GetAll(groupID)
 	if err != nil && err != mgo.ErrNotFound {
 		return err
 	}
