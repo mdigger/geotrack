@@ -72,7 +72,7 @@ func main() {
 	}
 	llog.Debug("CryptoKey: %v", tokenEngine.CryptoKey())
 
-	e.Use(middleware.Logger())
+	e.Use(Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.Gzip())
 
