@@ -48,15 +48,15 @@ func InitCache(mdb *mongo.DB, token string) (cache *Cache, err error) {
 
 // storeData описывает формат данных для хранения.
 type storeData struct {
-	*Profile           // профиль
-	Point    geo.Point // координаты
-	Data     []byte    // содержимое ответа
-	Time     time.Time // временная метка
+	Profile           // профиль
+	Point   geo.Point // координаты
+	Data    []byte    // содержимое ответа
+	Time    time.Time // временная метка
 }
 
 // Get возвращает данные эфемерид для указанной точки. Данные возвращаются из кеша, если
 // есть для ближайшей точки, либо запрашиваются с сервера U-blox в противном случае.
-func (c *Cache) Get(point *geo.Point, profile *Profile) (data []byte, err error) {
+func (c *Cache) Get(point geo.Point, profile Profile) (data []byte, err error) {
 	coll := c.GetCollection(CollectionName)
 	defer c.FreeCollection(coll)
 	// сначала ищем в кеше
@@ -87,7 +87,7 @@ func (c *Cache) Get(point *geo.Point, profile *Profile) (data []byte, err error)
 	// сохраняем ответ в хранилище
 	err = coll.Insert(&storeData{
 		Profile: profile,
-		Point:   *point,
+		Point:   point,
 		Data:    data,
 		Time:    time.Now(),
 	})

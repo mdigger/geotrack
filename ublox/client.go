@@ -42,7 +42,7 @@ func NewClient(token string) *Client {
 }
 
 // GetOnline запрашивает сервер u-blox и получает данные для указанной точки и профиля устройства.
-func (c *Client) GetOnline(point *geo.Point, profile *Profile) ([]byte, error) {
+func (c *Client) GetOnline(point geo.Point, profile Profile) ([]byte, error) {
 	// формируем строку запроса
 	var query = new(bytes.Buffer)
 	query.WriteString("token=")
@@ -56,7 +56,7 @@ func (c *Client) GetOnline(point *geo.Point, profile *Profile) ([]byte, error) {
 	if len(profile.GNSS) > 0 {
 		fmt.Fprintf(query, ";gnss=%s", strings.Join(profile.GNSS, ","))
 	}
-	if point != nil {
+	if !point.IsZero() {
 		fmt.Fprintf(query, ";lon=%f;lat=%f", point.Longitude(), point.Latitude())
 		if Pacc >= 0 && Pacc != 300000 && Pacc < 6000000 {
 			fmt.Fprintf(query, ";pacc=%d", Pacc)

@@ -9,7 +9,7 @@ type Profile struct {
 }
 
 // DefaultProfile описывает профиль запроса по умолчанию для запросов.
-var DefaultProfile = &Profile{
+var DefaultProfile = Profile{
 	Datatype:    []string{"pos", "eph", "aux"},
 	Format:      "aid",
 	GNSS:        []string{"gps"},
