@@ -53,9 +53,9 @@ func (db *DB) Get(groupID string, placeID bson.ObjectId) (place *Place, err erro
 // GetAll возвращает список всех описаний мест для указанной группы.
 // Результат содержит только информацию с описание круга или полигона. Информация
 // о группе и сформированном внутреннем индексном объекте Geo не возвращается.
-func (db *DB) GetAll(groupID string) (places []*Place, err error) {
+func (db *DB) GetAll(groupID string) (places []Place, err error) {
 	coll := db.GetCollection(CollectionName)
-	places = make([]*Place, 0)
+	places = make([]Place, 0)
 	selector := bson.M{"groupid": 0, "geo": 0}
 	err = coll.Find(bson.M{"groupid": groupID}).Select(selector).All(&places)
 	db.FreeCollection(coll)
@@ -66,7 +66,7 @@ func (db *DB) GetAll(groupID string) (places []*Place, err error) {
 // В объекте должно быть указано хотя бы одно описание места: либо круг, либо полигон.
 // Если указано и то, и другое, то используется только круг. Если не указано ни того,
 // ни другого, то такая запись игнорируется.
-func (db *DB) Save(place *Place) (id bson.ObjectId, err error) {
+func (db *DB) Save(place Place) (id bson.ObjectId, err error) {
 	coll := db.GetCollection(CollectionName)
 	defer db.FreeCollection(coll)
 	// анализируем описание места и формируем данные для индексации
@@ -97,14 +97,14 @@ func (db *DB) Delete(groupID string, placeID bson.ObjectId) (err error) {
 
 // Track возвращает список всех идентификаторов мест, определенных для группы,
 // которым соответствует данная точка трекера.
-func (db *DB) Track(track *tracks.TrackData) (placeIDs []*bson.ObjectId, err error) {
+func (db *DB) Track(track tracks.TrackData) (placeIDs []bson.ObjectId, err error) {
 	coll := db.GetCollection(CollectionName)
-	placeIDs = make([]*bson.ObjectId, 0)
+	placeIDs = make([]bson.ObjectId, 0)
 	err = coll.Find(bson.M{
 		"groupid": track.GroupID,
 		"geo": bson.M{
 			"$geoIntersects": bson.M{
-				"$geometry": track.Point.Geo(),
+				"$geometry": track.Location.Geo(),
 			},
 		},
 	}).Distinct("_id", &placeIDs)

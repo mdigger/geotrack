@@ -28,44 +28,21 @@ func TestPlaces(t *testing.T) {
 		deviceID = "test0123456789"
 		groupID  = users.SampleGroupID
 	)
-	places := []*Place{
-		// {Circle: geo.NewCircle(37.57351, 55.715084, 250.0), Name: "Работа"},
-		{Polygon: geo.NewPolygon(
-			geo.NewPoint(37.5667, 55.7152),
-			geo.NewPoint(37.5688, 55.7167),
-			geo.NewPoint(37.5703, 55.7169),
-			geo.NewPoint(37.5706, 55.7168),
-			geo.NewPoint(37.5726, 55.7159),
-			geo.NewPoint(37.5728, 55.7158),
-			geo.NewPoint(37.5731, 55.7159),
-			geo.NewPoint(37.5751, 55.7152),
-			geo.NewPoint(37.5758, 55.7148),
-			geo.NewPoint(37.5755, 55.7144),
-			geo.NewPoint(37.5749, 55.7141),
-			geo.NewPoint(37.5717, 55.7131),
-			geo.NewPoint(37.5709, 55.7128),
-			geo.NewPoint(37.5694, 55.7125),
-			geo.NewPoint(37.5661, 55.7145),
-			geo.NewPoint(37.5660, 55.7147),
-			geo.NewPoint(37.5667, 55.7152),
-		), Name: "Работа"},
-		{Circle: geo.NewCircle(37.589248, 55.765944, 200.0), Name: "Дом"},
-		{Polygon: geo.NewPolygon(
-			geo.NewPoint(37.6256, 55.7522),
-			geo.NewPoint(37.6304, 55.7523),
-			geo.NewPoint(37.6310, 55.7527),
-			geo.NewPoint(37.6322, 55.7526),
-			geo.NewPoint(37.6320, 55.7521),
-			geo.NewPoint(37.6326, 55.7517),
-			geo.NewPoint(37.6321, 55.7499),
-			geo.NewPoint(37.6305, 55.7499),
-			geo.NewPoint(37.6305, 55.7502),
-			geo.NewPoint(37.6264, 55.7504),
-			geo.NewPoint(37.6264, 55.7500),
-			geo.NewPoint(37.6254, 55.7500),
-			geo.NewPoint(37.6253, 55.7520),
-			geo.NewPoint(37.6256, 55.7522),
-		), Name: "Знаменский монастырь"},
+	places := []Place{
+		Place{Polygon: &geo.Polygon{{
+			{37.5667, 55.7152}, {37.5688, 55.7167}, {37.5703, 55.7169},
+			{37.5706, 55.7168}, {37.5726, 55.7159}, {37.5728, 55.7158},
+			{37.5731, 55.7159}, {37.5751, 55.7152}, {37.5758, 55.7148},
+			{37.5755, 55.7144}, {37.5749, 55.7141}, {37.5717, 55.7131},
+			{37.5709, 55.7128}, {37.5694, 55.7125}, {37.5661, 55.7145},
+			{37.5660, 55.7147}, {37.5667, 55.7152}}}, Name: "Работа"},
+		Place{Circle: &geo.Circle{geo.Point{37.589248, 55.765944}, 200.0}, Name: "Дом"},
+		Place{Polygon: &geo.Polygon{{
+			{37.6256, 55.7522}, {37.6304, 55.7523}, {37.6310, 55.7527},
+			{37.6322, 55.7526}, {37.6320, 55.7521}, {37.6326, 55.7517},
+			{37.6321, 55.7499}, {37.6305, 55.7499}, {37.6305, 55.7502},
+			{37.6264, 55.7504}, {37.6264, 55.7500}, {37.6254, 55.7500},
+			{37.6253, 55.7520}, {37.6256, 55.7522}}}, Name: "Знаменский монастырь"},
 	}
 	for _, place := range places {
 		place.GroupID = groupID
@@ -73,15 +50,15 @@ func TestPlaces(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		fmt.Println("id:", id)
+		fmt.Println("id:", id.Hex())
 	}
-	places, err = db.Get(groupID)
+	places, err = db.GetAll(groupID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println("Places:", len(places))
 	// pretty.Println(places)
-	track := &tracks.TrackData{
+	track := tracks.TrackData{
 		DeviceID: deviceID,
 		GroupID:  groupID,
 		Time:     time.Now(),
