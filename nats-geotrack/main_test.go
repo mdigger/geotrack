@@ -6,7 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mdigger/geolocate"
 	"github.com/mdigger/geotrack/geo"
+	"github.com/mdigger/geotrack/lbs/parser"
 	"github.com/mdigger/geotrack/mongo"
 	"github.com/mdigger/geotrack/tracks"
 	"github.com/mdigger/geotrack/users"
@@ -43,16 +45,18 @@ func TestSubscription(t *testing.T) {
 
 	var (
 		timemout = 10 * time.Second
-		point    = geo.NewPoint(55.715084, 37.57351)
+		point    = geo.Point{55.715084, 37.57351}
 		deviceID = "test0123456789"
 		groupID  = users.SampleGroupID
 	)
 	{
 		fmt.Println("LBS Request")
-		var data = new(geo.Point)
-		err = nce.Request(serviceNameLBS,
-			`864078-35827-010003698-fa-2-1e50-772a-95-1e50-773c-a6-1e50-7728-a1-1e50-7725-92-1e50-772d-90-1e50-7741-90-1e50-7726-88`,
-			data, timemout)
+		req, err := parser.ParseLBS("gsm", `864078-35827-010003698-fa-2-1e50-772a-95-1e50-773c-a6-1e50-7728-a1-1e50-7725-92-1e50-772d-90-1e50-7741-90-1e50-7726-88`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var data geolocate.Response
+		err = nce.Request(serviceNameLBS, req, &data, timemout)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -61,7 +65,7 @@ func TestSubscription(t *testing.T) {
 	{
 		fmt.Println("UBLOX Request")
 		var data []byte
-		err = nce.Request(serviceNameUblox, point, &data, timemout)
+		err = nce.Request(serviceNameUblox, &point, &data, timemout)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -79,11 +83,11 @@ func TestSubscription(t *testing.T) {
 	}
 	{
 		fmt.Println("TRACK publish")
-		var data = &tracks.TrackData{
+		var data = tracks.TrackData{
 			GroupID:  groupID,
 			DeviceID: deviceID,
 			Time:     time.Now(),
-			Point:    point,
+			Location: point,
 		}
 		err = nce.Publish(serviceNameTracks, data)
 		if err != nil {

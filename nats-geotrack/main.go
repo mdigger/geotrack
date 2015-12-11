@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/mdigger/geolocate"
 	"github.com/mdigger/geotrack/geo"
 	"github.com/mdigger/geotrack/lbs"
 	"github.com/mdigger/geotrack/mongo"
@@ -80,16 +81,16 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 	if err != nil {
 		return err
 	}
-	if lbs.RecordsCount() == 0 {
+	if lbs.Records() == 0 {
 		log.Println("Warning! LBS DB is empty!")
 	}
-	nce.Subscribe(serviceNameLBS, func(_, reply, data string) {
-		log.Println("LBS:", data)
-		point, err := lbs.SearchLBS(data)
+	nce.Subscribe(serviceNameLBS, func(_, reply string, req *geolocate.Request) {
+		// log.Println("LBS:", req)
+		resp, err := lbs.Get(*req)
 		if err != nil {
 			log.Println("LBS error:", err)
 		}
-		if err := nce.Publish(reply, point); err != nil {
+		if err := nce.Publish(reply, resp); err != nil {
 			log.Println("LBS reply error:", err)
 		}
 	})
@@ -101,8 +102,8 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 	}
 	profile := ublox.DefaultProfile
 	nce.Subscribe(serviceNameUblox, func(_, reply string, point *geo.Point) {
-		log.Println("UBLOX:", point)
-		data, err := ubloxCache.Get(point, profile)
+		// log.Println("UBLOX:", point)
+		data, err := ubloxCache.Get(*point, profile)
 		if err != nil {
 			log.Println("UBLOX error:", err)
 		}
@@ -120,7 +121,7 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 	// groupID := users.SampleGroupID
 	groupID := usersDB.GetSampleGroupID()
 	nce.Subscribe(serviceNameIMEI, func(_, reply, data string) {
-		log.Println("IMEI:", data)
+		// log.Println("IMEI:", data)
 		group, err := usersDB.GetGroup(groupID)
 		if err != nil {
 			log.Println("Error getting group of users:", err)
@@ -135,9 +136,9 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 	if err != nil {
 		return err
 	}
-	nce.Subscribe(serviceNameTracks, func(data *tracks.TrackData) {
-		log.Printf("TRACK: %v:%v %v", data.GroupID, data.DeviceID, data.Point)
-		if err := tracksDB.Add(data); err != nil {
+	nce.Subscribe(serviceNameTracks, func(tracks ...tracks.TrackData) {
+		// log.Printf("TRACK: %v:%v %v", data.GroupID, data.DeviceID, data.Point)
+		if err := tracksDB.Add(tracks...); err != nil {
 			log.Println("Error TrackDB Add:", err)
 		}
 	})
