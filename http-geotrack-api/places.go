@@ -44,8 +44,8 @@ func getPlace(c *echo.Context) error {
 // postPlace добавляет новое определение места.
 func postPlace(c *echo.Context) error {
 	groupID := c.Get("GroupID").(string)
-	place := new(places.Place) // описание места
-	err := c.Bind(place)       // разбираем описание места из запроса
+	var place places.Place // описание места
+	err := c.Bind(&place)  // разбираем описание места из запроса
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -70,8 +70,8 @@ func putPlace(c *echo.Context) error {
 	if !bson.IsObjectIdHex(placeID) {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
-	place := new(places.Place) // описание места
-	err := c.Bind(place)       // разбираем описание места из запроса
+	var place places.Place // описание места
+	err := c.Bind(&place)  // разбираем описание места из запроса
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
