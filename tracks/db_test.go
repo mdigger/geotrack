@@ -16,6 +16,11 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+func TestMethod(t *testing.T) {
+	fmt.Printf("%04b %04b %04b %04b\n", ptGPS, ptLBS, ptWiFi, ptLBS+ptWiFi)
+	fmt.Printf("%d %d %d %d\n", ptGPS, ptLBS, ptWiFi, ptLBS+ptWiFi)
+}
+
 func TestBD(t *testing.T) {
 	mdb, err := mongo.Connect("mongodb://localhost/watch")
 	if err != nil {
@@ -33,7 +38,7 @@ func TestBD(t *testing.T) {
 	const deviceID = "test0123456789"
 	var (
 		groupID = users.SampleGroupID
-		points  = []*geo.Point{
+		points  = []geo.Point{
 			{37.57351, 55.715084},
 			{37.595061, 55.736077},
 			{37.589248, 55.765944},
@@ -54,12 +59,12 @@ func TestBD(t *testing.T) {
 	)
 
 	for {
-		track := &TrackData{
+		track := TrackData{
 			DeviceID: deviceID,
 			GroupID:  groupID,
 			Time:     currentTime,
-			Point:    currentPoint,
-			Type:     uint8(rand.Int31n(5)),
+			Location: currentPoint,
+			Method:   uint8(rand.Int31n(5)),
 		}
 		if err := db.Add(track); err != nil {
 			t.Fatal(err)

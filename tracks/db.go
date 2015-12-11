@@ -57,17 +57,19 @@ func InitDB(mdb *mongo.DB) (db *DB, err error) {
 
 // TrackData описывает входящий формат данных трекинга.
 type TrackData struct {
-	GroupID  string     // идентификатор группы
-	DeviceID string     // уникальный идентификатор устройства
-	Time     time.Time  // временная метка
-	Point    *geo.Point // координаты точки
-	Type     uint8      // тип получения координат: GPS, LBS, WiFi и так далее
+	GroupID  string    // идентификатор группы
+	DeviceID string    // уникальный идентификатор устройства
+	Time     time.Time // временная метка
+	Location geo.Point // координаты точки
+	Accuracy float64   // погрешность кооржинат в метрах
+	Method   uint8     // метод получения координат: GPS, LBS, WiFi и так далее
+	Power    uint8     // уровень заряда
 }
 
-// Add добавляет запись трекинга в хранилище.
-func (db *DB) Add(track *TrackData) (err error) {
+// Add добавляет записи трекинга в хранилище.
+func (db *DB) Add(tracks ...TrackData) (err error) {
 	coll := db.GetCollection(CollectionName)
-	err = coll.Insert(track)
+	err = coll.Insert(tracks)
 	db.FreeCollection(coll)
 	return
 }
@@ -89,7 +91,7 @@ var selector = bson.M{"time": 1, "point": 1, "type": 1}
 //
 // Метод поддерживает разбиение результатов на отдельные блоки: limit указывает максимальное
 // количество отдаваемых в ответ данных, а lastID — идентификатор последнего полученного трека.
-func (db *DB) Get(groupID, deviceID string, limit int, lastID string) (tracks []*Track, err error) {
+func (db *DB) Get(groupID, deviceID string, limit int, lastID string) (tracks []Track, err error) {
 	coll := db.GetCollection(CollectionName)
 	// ищем все треки с указанного устройства
 	var search = bson.M{
@@ -102,10 +104,10 @@ func (db *DB) Get(groupID, deviceID string, limit int, lastID string) (tracks []
 	// используем обратную сортировку: свежие записи должны идти раньше более старых
 	query := coll.Find(search).Select(selector).Sort("-$natural")
 	if limit > 0 {
-		query.Limit(limit)                // ограничиваем количество запрашиваемых данных
-		tracks = make([]*Track, 0, limit) // мы заранее знаем максимальное количество записей
+		query.Limit(limit)               // ограничиваем количество запрашиваемых данных
+		tracks = make([]Track, 0, limit) // мы заранее знаем максимальное количество записей
 	} else {
-		tracks = make([]*Track, 0)
+		tracks = make([]Track, 0)
 	}
 	err = query.All(&tracks)
 	db.FreeCollection(coll)
@@ -113,7 +115,7 @@ func (db *DB) Get(groupID, deviceID string, limit int, lastID string) (tracks []
 }
 
 // GetDay возвращает список треков для указанного устройства за последние сутки.
-func (db *DB) GetDay(groupID, deviceID string) (tracks []*Track, err error) {
+func (db *DB) GetDay(groupID, deviceID string) (tracks []Track, err error) {
 	coll := db.GetCollection(CollectionName)
 	// ищем все треки с указанного устройства за последние сутки
 	var search = bson.M{
@@ -123,7 +125,7 @@ func (db *DB) GetDay(groupID, deviceID string) (tracks []*Track, err error) {
 	}
 	// используем обратную сортировку: свежие записи должны идти раньше более старых
 	query := coll.Find(search).Select(selector).Sort("-$natural")
-	tracks = make([]*Track, 0)
+	tracks = make([]Track, 0)
 	err = query.All(&tracks)
 	db.FreeCollection(coll)
 	return
@@ -131,14 +133,13 @@ func (db *DB) GetDay(groupID, deviceID string) (tracks []*Track, err error) {
 
 // GetLast возвращает самый последний трек для данного устройства, сохраненный
 // в хранилище.
-func (db *DB) GetLast(groupID, deviceID string) (track *Track, err error) {
+func (db *DB) GetLast(groupID, deviceID string) (track Track, err error) {
 	coll := db.GetCollection(CollectionName)
-	track = new(Track)
 	var search = bson.M{
 		"groupid":  groupID,
 		"deviceid": deviceID,
 	}
-	err = coll.Find(search).Select(selector).Sort("-$natural").One(track)
+	err = coll.Find(search).Select(selector).Sort("-$natural").One(&track)
 	db.FreeCollection(coll)
 	return
 }
