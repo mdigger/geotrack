@@ -13,20 +13,20 @@ type Circle struct {
 }
 
 // NewCircle возвращает новое описание круга.
-func NewCircle(lon, lat, radius float64) *Circle {
-	return &Circle{
-		Center: *NewPoint(lon, lat),
+func NewCircle(lon, lat, radius float64) Circle {
+	return Circle{
+		Center: NewPoint(lon, lat),
 		Radius: radius,
 	}
 }
 
 // Polygon возвращает описание круга в виде полигона.
 // Количество элементов полигона задается глобальной переменной CircleToPolygonSegments.
-func (c *Circle) Polygon() *Polygon {
+func (c Circle) Polygon() Polygon {
 	rLat := c.Radius / EarthRadius * 180.0 / math.Pi
 	rLng := rLat / math.Cos(c.Center.Latitude()*math.Pi/180.0)
 	dRad := 2.0 * math.Pi / float64(CircleToPolygonSegments)
-	points := make([]*Point, CircleToPolygonSegments+1)
+	points := make([]Point, CircleToPolygonSegments+1)
 	for i := 0; i <= CircleToPolygonSegments; i++ {
 		theta := dRad * float64(i)
 		x := math.Cos(theta)
@@ -44,10 +44,10 @@ func (c *Circle) Polygon() *Polygon {
 
 // Geo возвращает описание круга в виде GeoJSON-объекта.
 // По той простой идеи, что GeoJSON не поддерживает круги, он преобразуется в полигон.
-func (c *Circle) Geo() interface{} {
-	return &struct {
+func (c Circle) Geo() interface{} {
+	return struct {
 		Type        string
-		Coordinates *Polygon
+		Coordinates Polygon
 	}{
 		Type:        "Polygon",
 		Coordinates: c.Polygon(),
