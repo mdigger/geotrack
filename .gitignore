@@ -2,5 +2,4 @@ http-geotrack-api/http-geotrack-api
 http-geotrack-map/http-geotrack-map
 nats-geotrack/nats-geotrack
 lbs/lbs-import/lbs-import
-*.csv
-
+lbs/lbs-import/*.csv
