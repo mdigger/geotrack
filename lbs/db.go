@@ -135,7 +135,7 @@ func (db *DB) Get(req geolocate.Request) (response *geolocate.Response, err erro
 	response = &geolocate.Response{
 		Location: geolocate.Point{
 			Lat: lat,
-			Lng: lon,
+			Lon: lon,
 		},
 		Accuracy: accuracy,
 	}

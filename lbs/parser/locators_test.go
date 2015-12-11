@@ -119,42 +119,42 @@ func TestLocators2(t *testing.T) {
 			fmt.Printf("%9s error: %v\n", "Google", err)
 			t.Error(err)
 		} else {
-			fmt.Printf("%9s [%.7f,%.7f] %.2f\n", "Google", resp.Location.Lng, resp.Location.Lat, resp.Accuracy)
+			fmt.Printf("%9s [%.7f,%.7f] %.2f\n", "Google", resp.Location.Lon, resp.Location.Lat, resp.Accuracy)
 		}
 		resp, err = google.Get(req2)
 		if err != nil {
 			fmt.Printf("%9s error: %v\n", "*Google", err)
 			t.Error(err)
 		} else {
-			fmt.Printf("%9s [%.7f,%.7f] %.2f\n", "*Google", resp.Location.Lng, resp.Location.Lat, resp.Accuracy)
+			fmt.Printf("%9s [%.7f,%.7f] %.2f\n", "*Google", resp.Location.Lon, resp.Location.Lat, resp.Accuracy)
 		}
 		resp, err = yandex.Get(*req1)
 		if err != nil {
 			fmt.Printf("%9s error: %v\n", "Yandex", err)
 			t.Error(err)
 		} else {
-			fmt.Printf("%9s [%.7f,%.7f] %.2f\n", "Yandex", resp.Location.Lng, resp.Location.Lat, resp.Accuracy)
+			fmt.Printf("%9s [%.7f,%.7f] %.2f\n", "Yandex", resp.Location.Lon, resp.Location.Lat, resp.Accuracy)
 		}
 		resp, err = yandex.Get(req2)
 		if err != nil {
 			fmt.Printf("%9s error: %v\n", "*Yandex", err)
 			t.Error(err)
 		} else {
-			fmt.Printf("%9s [%.7f,%.7f] %.2f\n", "*Yandex", resp.Location.Lng, resp.Location.Lat, resp.Accuracy)
+			fmt.Printf("%9s [%.7f,%.7f] %.2f\n", "*Yandex", resp.Location.Lon, resp.Location.Lat, resp.Accuracy)
 		}
 		resp, err = mozilla.Get(*req1)
 		if err != nil {
 			fmt.Printf("%9s error: %v\n", "Mozilla", err)
 			t.Error(err)
 		} else {
-			fmt.Printf("%9s [%.7f,%.7f] %.2f\n", "Mozilla", resp.Location.Lng, resp.Location.Lat, resp.Accuracy)
+			fmt.Printf("%9s [%.7f,%.7f] %.2f\n", "Mozilla", resp.Location.Lon, resp.Location.Lat, resp.Accuracy)
 		}
 		resp, err = mozilla.Get(req2)
 		if err != nil {
 			fmt.Printf("%9s error: %v\n", "*Mozilla", err)
 			t.Error(err)
 		} else {
-			fmt.Printf("%9s [%.7f,%.7f] %.2f\n", "*Mozilla", resp.Location.Lng, resp.Location.Lat, resp.Accuracy)
+			fmt.Printf("%9s [%.7f,%.7f] %.2f\n", "*Mozilla", resp.Location.Lon, resp.Location.Lat, resp.Accuracy)
 		}
 		fmt.Println("-----------------------------------------")
 	}
@@ -192,28 +192,28 @@ func TestLocators(t *testing.T) {
 			fmt.Printf("%8s error: %v\n", "Google", err)
 			t.Error(err)
 		} else {
-			fmt.Printf("%8s [%.7f,%.7f] %.2f\n", "Google", resp.Location.Lng, resp.Location.Lat, resp.Accuracy)
+			fmt.Printf("%8s [%.7f,%.7f] %.2f\n", "Google", resp.Location.Lon, resp.Location.Lat, resp.Accuracy)
 		}
 		resp, err = yandex.Get(*req)
 		if err != nil {
 			fmt.Printf("%8s error: %v\n", "Yandex", err)
 			t.Error(err)
 		} else {
-			fmt.Printf("%8s [%.7f,%.7f] %.2f\n", "Yandex", resp.Location.Lng, resp.Location.Lat, resp.Accuracy)
+			fmt.Printf("%8s [%.7f,%.7f] %.2f\n", "Yandex", resp.Location.Lon, resp.Location.Lat, resp.Accuracy)
 		}
 		resp, err = mozilla.Get(*req)
 		if err != nil {
 			fmt.Printf("%8s error: %v\n", "Mozilla", err)
 			t.Error(err)
 		} else {
-			fmt.Printf("%8s [%.7f,%.7f] %.2f\n", "Mozilla", resp.Location.Lng, resp.Location.Lat, resp.Accuracy)
+			fmt.Printf("%8s [%.7f,%.7f] %.2f\n", "Mozilla", resp.Location.Lon, resp.Location.Lat, resp.Accuracy)
 		}
 		resp, err = lbs.Get(*req)
 		if err != nil {
 			fmt.Printf("%8s error: %v\n", "Internal", err)
 			t.Error(err)
 		}
-		fmt.Printf("%8s [%.7f,%.7f] %.2f\n", "Internal", resp.Location.Lng, resp.Location.Lat, resp.Accuracy)
+		fmt.Printf("%8s [%.7f,%.7f] %.2f\n", "Internal", resp.Location.Lon, resp.Location.Lat, resp.Accuracy)
 		fmt.Println("-----------------------------------------")
 	}
 }
