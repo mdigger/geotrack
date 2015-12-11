@@ -114,8 +114,8 @@ func history(c *echo.Context) error {
 		return err
 	}
 	data := struct {
-		Tracks []*tracks.Track
-		Places []*places.Place
+		Tracks []tracks.Track
+		Places []places.Place
 	}{
 		Tracks: dayTracks,
 		Places: groupPlaces,

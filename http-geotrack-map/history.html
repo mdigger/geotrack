@@ -13,31 +13,31 @@
     ymaps.ready(init);
     function init() {
       var myMap = new ymaps.Map("map", {
-        center: {{if .Tracks}}{{with index .Tracks 0}}{{.Point}}{{end}}{{else}}[37.57351,55.715084]{{end}},
+        center: {{if .Tracks}}{{with index .Tracks 0}}{{.Location}}{{end}}{{else}}[37.57351,55.715084]{{end}},
         zoom: 16,
         controls: ['zoomControl', 'typeSelector']
       });
       {{if .Tracks}}var myPolyline = new ymaps.Polyline([{{range .Tracks}}
-        {{.Point}},{{end}}
+        {{.Location}},{{end}}
       ]);
       myMap.geoObjects.add(myPolyline);
       var data = {
         type: "FeatureCollection",
         features: [{{range $index, $element := .Tracks}}
           {type: "Feature", id: "{{$element.ID.Hex}}", 
-           geometry: {type: "Point", coordinates: {{$element.Point}}}, 
+           geometry: {type: "Point", coordinates: {{$element.Location}}}, 
            properties: {
              iconContent: {{$index}},
              balloonContent: "<table>"+
                 "<tr><td>Date:</td><td>{{$element.Time}}</td></tr>"+
-                "<tr><td>Point:</td><td>{{$element.Point}}</td></tr>"+
+                "<tr><td>Location:</td><td>{{$element.Location}}</td></tr>"+
                 "<tr><td>ID:</td><td>{{$element.ID.Hex}}</td></tr>"+
-                "<tr><td>Type:</td><td>{{if ge $element.Type 4}}LBS{{else if ge $element.Type 2}}Wi-Fi{{else if ge $element.Type 1}}GPS{{else}}Unknown{{end}}</td></tr>"+
+                "<tr><td>Method:</td><td>{{if ge .Method 6}}GSM+Wi-Fi{{else if ge .Method 4}}Wi-Fi{{else if ge .Method 2}}GSM{{else if ge .Method 1}}GPS{{else}}Unknown{{end}}</td></tr>"+
                 "</table>", 
              clusterCaption: "# {{$index}}", 
              hintContent: "{{$element.Time}}"
            },
-           options: {iconColor: "{{if ge $element.Type 4}}red{{else if ge $element.Type 2}}orange{{else if ge $element.Type 1}}green{{else}}gray{{end}}"}},{{end}}
+           options: {iconColor: "{{if ge .Method 6}}blue{{if ge .Method 4}}orange{{else if ge .Method 2}}red{{else if ge .Method 1}}green{{else}}gray{{end}}"}},{{end}}
         ]
       };
       var objectManager = new ymaps.ObjectManager({groupByCoordinates: true, clusterize: true});
