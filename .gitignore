@@ -1,5 +1,6 @@
-lbs/lbs-import/cell_towers.csv
-lbs/lbs-import/lbs-import
 http-geotrack-api/http-geotrack-api
 http-geotrack-map/http-geotrack-map
 nats-geotrack/nats-geotrack
+lbs/lbs-import/lbs-import
+*.csv
+
