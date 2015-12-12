@@ -37,7 +37,7 @@
              clusterCaption: "# {{$index}}", 
              hintContent: "{{$element.Time}}"
            },
-           options: {iconColor: "{{if ge .Method 6}}blue{{if ge .Method 4}}orange{{else if ge .Method 2}}red{{else if ge .Method 1}}green{{else}}gray{{end}}"}},{{end}}
+           options: {iconColor: "{{if ge .Method 6}}blue{{else if ge .Method 4}}orange{{else if ge .Method 2}}red{{else if ge .Method 1}}green{{else}}gray{{end}}"}},{{end}}
         ]
       };
       var objectManager = new ymaps.ObjectManager({groupByCoordinates: true, clusterize: true});
