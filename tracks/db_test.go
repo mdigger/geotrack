@@ -64,7 +64,7 @@ func TestBD(t *testing.T) {
 			GroupID:  groupID,
 			Time:     currentTime,
 			Location: currentPoint,
-			Method:   uint8(rand.Int31n(5)),
+			Method:   uint8(rand.Int31n(7)),
 		}
 		if err := db.Add(track); err != nil {
 			t.Fatal(err)
@@ -116,7 +116,7 @@ func TestBD(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println("last:", track.Time.Format("15:04:05"), track.ID.Hex(), track.Point)
+	fmt.Println("last:", track.Time.Format("15:04:05"), track.ID.Hex(), track.Location)
 	jsondata, err := json.MarshalIndent(track, "", "\t")
 	if err != nil {
 		t.Fatal(err)

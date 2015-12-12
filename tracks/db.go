@@ -79,14 +79,14 @@ func (db *DB) Add(tracks ...TrackData) (err error) {
 // и уникальный идентификатор данных в хранилище. Идентификатор не является обязательным:
 // если он отсутствует, то будет автоматически присвоен при сохранении в хранилище.
 type Track struct {
-	ID    bson.ObjectId `bson:"_id"` // уникальный идентификатор
-	Time  time.Time     // временная метка
-	Point geo.Point     // координаты точки
-	Type  uint8         // тип полученных координат: GPS, LBS, WiFi и так далее
+	ID       bson.ObjectId `bson:"_id"` // уникальный идентификатор
+	Time     time.Time     // временная метка
+	Location geo.Point     // координаты точки
+	Method   uint8         // тип полученных координат: GPS, LBS, WiFi и так далее
 }
 
 // selector описывает список выбираемых полей
-var selector = bson.M{"time": 1, "location": 1, "type": 1}
+var selector = bson.M{"time": 1, "location": 1, "method": 1}
 
 // Get возвращает список треков для указанного устройства.
 //
