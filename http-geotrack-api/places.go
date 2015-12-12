@@ -88,7 +88,7 @@ func putPlace(c *echo.Context) error {
 		llog.Error("placesDB error: %v", err)
 		return err
 	}
-	return c.NoContent(http.StatusNoContent)
+	return c.NoContent(http.StatusOK)
 }
 
 // deletePlace удаляет определение места.
@@ -106,5 +106,5 @@ func deletePlace(c *echo.Context) error {
 		llog.Error("placesDB error: %v", err)
 		return err
 	}
-	return c.NoContent(http.StatusNoContent)
+	return c.NoContent(http.StatusOK)
 }

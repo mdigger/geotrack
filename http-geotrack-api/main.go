@@ -92,6 +92,7 @@ func main() {
 
 	apiV1Sec.Get("/devices", getDevices)                          // возвращает список устройств
 	apiV1Sec.Get("/devices/:device-id", getDeviceCurrent)         // возвращает последнюю точку трекинга устройства
+	apiV1Sec.Post("/devices/:device-id", postDeviceHistory)       // добавляет данные о треках устройства
 	apiV1Sec.Get("/devices/:device-id/history", getDeviceHistory) // возвращает список треков устройства
 
 	apiV1Sec.Post("/register/:push-type", postRegister)            // регистрирует устройство для отправки push-сообщений

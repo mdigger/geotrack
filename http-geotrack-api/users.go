@@ -10,8 +10,8 @@ import (
 // getUsers отдает список зарегистрированных пользователей, которые относятся к той же
 // группе, что и текущий пользователь.
 func getUsers(c *echo.Context) error {
-	groupID := c.Get("GroupID").(string)    // получаем идентификатор группы
-	users, err := usersDB.GetUsers(groupID) // запрашиваем список пользователей
+	groupID := c.Get("GroupID").(string)
+	users, err := usersDB.GetUsers(groupID)
 	if err == mgo.ErrNotFound {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
