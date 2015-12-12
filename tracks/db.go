@@ -36,11 +36,6 @@ func InitDB(mdb *mongo.DB) (db *DB, err error) {
 	db = &DB{mdb}
 	coll := mdb.GetCollection(CollectionName)
 	defer mdb.FreeCollection(coll)
-	// ключ для выборки треков по идентификатору устройства
-	// используется для получения списка треков для конкретного устройства
-	if err = coll.EnsureIndexKey("groupid", "deviceid", "-_id"); err != nil {
-		return
-	}
 	// ключ для выборки треков по идентификатору устройства и времени
 	if err = coll.EnsureIndexKey("groupid", "deviceid", "time", "-_id"); err != nil {
 		return
@@ -68,8 +63,14 @@ type TrackData struct {
 
 // Add добавляет записи трекинга в хранилище.
 func (db *DB) Add(tracks ...TrackData) (err error) {
+	// конвертируем типизированный список в нетипизированный
+	data := make([]interface{}, len(tracks))
+	for i, item := range tracks {
+		data[i] = item
+	}
+	// сохраняем в коллекции
 	coll := db.GetCollection(CollectionName)
-	err = coll.Insert(tracks)
+	err = coll.Insert(data...)
 	db.FreeCollection(coll)
 	return
 }

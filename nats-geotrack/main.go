@@ -10,6 +10,7 @@ import (
 	"github.com/mdigger/geotrack/geo"
 	"github.com/mdigger/geotrack/lbs"
 	"github.com/mdigger/geotrack/mongo"
+	"github.com/mdigger/geotrack/sensors"
 	"github.com/mdigger/geotrack/tracks"
 	"github.com/mdigger/geotrack/ublox"
 	"github.com/mdigger/geotrack/users"
@@ -17,10 +18,11 @@ import (
 )
 
 const (
-	serviceNameLBS    = "lbs"
-	serviceNameUblox  = "ublox"
-	serviceNameIMEI   = "imei"
-	serviceNameTracks = "track"
+	serviceNameLBS     = "lbs"
+	serviceNameUblox   = "ublox"
+	serviceNameIMEI    = "imei"
+	serviceNameTracks  = "track"
+	serviceNameSensors = "sensor"
 )
 
 var ubloxToken = "I6KKO4RU_U2DclBM9GVyrA"
@@ -84,9 +86,9 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 	if lbs.Records() == 0 {
 		log.Println("Warning! LBS DB is empty!")
 	}
-	nce.Subscribe(serviceNameLBS, func(_, reply string, req *geolocate.Request) {
-		// log.Println("LBS:", req)
-		resp, err := lbs.Get(*req)
+	nce.Subscribe(serviceNameLBS, func(_, reply string, req geolocate.Request) {
+		log.Println("LBS:", req)
+		resp, err := lbs.Get(req)
 		if err != nil {
 			log.Println("LBS error:", err)
 		}
@@ -101,9 +103,9 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 		return err
 	}
 	profile := ublox.DefaultProfile
-	nce.Subscribe(serviceNameUblox, func(_, reply string, point *geo.Point) {
-		// log.Println("UBLOX:", point)
-		data, err := ubloxCache.Get(*point, profile)
+	nce.Subscribe(serviceNameUblox, func(_, reply string, point geo.Point) {
+		log.Println("UBLOX:", point)
+		data, err := ubloxCache.Get(point, profile)
 		if err != nil {
 			log.Println("UBLOX error:", err)
 		}
@@ -121,7 +123,7 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 	// groupID := users.SampleGroupID
 	groupID := usersDB.GetSampleGroupID()
 	nce.Subscribe(serviceNameIMEI, func(_, reply, data string) {
-		// log.Println("IMEI:", data)
+		log.Println("IMEI:", data)
 		group, err := usersDB.GetGroup(groupID)
 		if err != nil {
 			log.Println("Error getting group of users:", err)
@@ -136,10 +138,22 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 	if err != nil {
 		return err
 	}
-	nce.Subscribe(serviceNameTracks, func(tracks ...tracks.TrackData) {
-		// log.Printf("TRACK: %v:%v %v", data.GroupID, data.DeviceID, data.Point)
+	nce.Subscribe(serviceNameTracks, func(tracks []tracks.TrackData) {
+		log.Printf("TRACK: %v", tracks)
 		if err := tracksDB.Add(tracks...); err != nil {
 			log.Println("Error TrackDB Add:", err)
+		}
+	})
+
+	log.Println("Initializing Sensors subscription...")
+	sensorsDB, err := sensors.InitDB(mdb)
+	if err != nil {
+		return err
+	}
+	nce.Subscribe(serviceNameSensors, func(sensors []sensors.SensorData) {
+		log.Printf("SENSORS: %v", sensors)
+		if err := sensorsDB.Add(sensors...); err != nil {
+			log.Println("Error SensorDB Add:", err)
 		}
 	})
 

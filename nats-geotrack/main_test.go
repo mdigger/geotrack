@@ -10,6 +10,7 @@ import (
 	"github.com/mdigger/geotrack/geo"
 	"github.com/mdigger/geotrack/lbs/parser"
 	"github.com/mdigger/geotrack/mongo"
+	"github.com/mdigger/geotrack/sensors"
 	"github.com/mdigger/geotrack/tracks"
 	"github.com/mdigger/geotrack/users"
 	"github.com/nats-io/nats"
@@ -51,12 +52,12 @@ func TestSubscription(t *testing.T) {
 	)
 	{
 		fmt.Println("LBS Request")
-		req, err := parser.ParseLBS("gsm", `864078-35827-010003698-fa-2-1e50-772a-95-1e50-773c-a6-1e50-7728-a1-1e50-7725-92-1e50-772d-90-1e50-7741-90-1e50-7726-88`)
+		req, err := parser.ParseLBS("gsm", `3D867293-13007-022970357-fa-2-1e3f-57f5-8b-1e3f-9b10-8a-1e3f-5100-79-1e3f-b6a6-78-1e3f-6aaa-78-1e3f-57f6-77-1e3f-5103-72`)
 		if err != nil {
 			t.Fatal(err)
 		}
 		var data geolocate.Response
-		err = nce.Request(serviceNameLBS, req, &data, timemout)
+		err = nce.Request(serviceNameLBS, *req, &data, timemout)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -65,7 +66,7 @@ func TestSubscription(t *testing.T) {
 	{
 		fmt.Println("UBLOX Request")
 		var data []byte
-		err = nce.Request(serviceNameUblox, &point, &data, timemout)
+		err = nce.Request(serviceNameUblox, point, &data, timemout)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -89,10 +90,28 @@ func TestSubscription(t *testing.T) {
 			Time:     time.Now(),
 			Location: point,
 		}
-		err = nce.Publish(serviceNameTracks, data)
+		err = nce.Publish(serviceNameTracks, []tracks.TrackData{data})
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
-	time.Sleep(time.Second * 2) // ожидаем обработки, иначе не успеет
+	{
+		fmt.Println("SENSOR publish")
+		var data = sensors.SensorData{
+			GroupID:  groupID,
+			DeviceID: deviceID,
+			Time:     time.Now(),
+			Data: map[string]interface{}{
+				"sensor1": uint(1),
+				"sensor2": "sensor 2",
+				"sensor3": []uint{1, 2, 3},
+			},
+		}
+		err = nce.Publish(serviceNameSensors, []sensors.SensorData{data})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	time.Sleep(time.Second * 5) // ожидаем обработки, иначе не успеет
 }
