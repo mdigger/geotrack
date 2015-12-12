@@ -20,7 +20,7 @@ var (
 	// Необходимо обратить внимание, что значение этой переменной используется при создании индекса
 	// удаления данных на MongoDB, поэтому ее изменение может повлиять только при пересоздании
 	// этого индекса или при инициализации новой базы данных.
-	ExpireAfter = time.Duration(time.Hour * 24 * 7)
+	ExpireAfter = time.Duration(time.Hour * 24 * 31)
 )
 
 // DB описывает интерфейс для работы с хранилищем данных трекинга для устройств.
@@ -36,15 +36,15 @@ func InitDB(mdb *mongo.DB) (db *DB, err error) {
 	db = &DB{mdb}
 	coll := mdb.GetCollection(CollectionName)
 	defer mdb.FreeCollection(coll)
-	// ключ для выборки треков по идентификатору устройства и времени
-	if err = coll.EnsureIndexKey("groupid", "deviceid", "time", "-_id"); err != nil {
-		return
-	}
-	// ключ для автоматического удаления устаревших записей трекинга устройств
 	if err = coll.EnsureIndex(mgo.Index{
-		Key:         []string{"time"},
+		Key:         []string{"groupid", "deviceid", "time"},
+		Unique:      true,
+		DropDups:    true,
 		ExpireAfter: ExpireAfter,
 	}); err != nil {
+		return
+	}
+	if err = coll.EnsureIndexKey("groupid", "deviceid", "time", "-_id"); err != nil {
 		return
 	}
 	return

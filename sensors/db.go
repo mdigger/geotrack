@@ -3,13 +3,15 @@ package sensors
 import (
 	"time"
 
+	"gopkg.in/mgo.v2"
+
 	"github.com/kr/pretty"
 	"github.com/mdigger/geotrack/mongo"
 )
 
 var CollectionName = "sensors"
 
-var ExpireAfter = time.Duration(time.Hour * 24 * 7)
+var ExpireAfter = time.Duration(time.Hour * 24 * 31)
 
 type DB struct {
 	*mongo.DB // соединение с MongoDB
@@ -19,7 +21,14 @@ func InitDB(mdb *mongo.DB) (db *DB, err error) {
 	db = &DB{mdb}
 	coll := mdb.GetCollection(CollectionName)
 	defer mdb.FreeCollection(coll)
-	// ключ для выборки треков по идентификатору устройства и времени
+	if err = coll.EnsureIndex(mgo.Index{
+		Key:         []string{"groupid", "deviceid", "time"},
+		Unique:      true,
+		DropDups:    true,
+		ExpireAfter: ExpireAfter,
+	}); err != nil {
+		return
+	}
 	if err = coll.EnsureIndexKey("groupid", "deviceid", "time", "-_id"); err != nil {
 		return
 	}
