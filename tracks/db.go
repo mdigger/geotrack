@@ -86,7 +86,7 @@ type Track struct {
 }
 
 // selector описывает список выбираемых полей
-var selector = bson.M{"time": 1, "point": 1, "type": 1}
+var selector = bson.M{"time": 1, "location": 1, "type": 1}
 
 // Get возвращает список треков для указанного устройства.
 //

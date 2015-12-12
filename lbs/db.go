@@ -46,8 +46,8 @@ type Key struct {
 
 // Data описывает данные для вышки сотовой станции.
 type Data struct {
-	Location geo.Point `bson:"point"` // координаты
-	Accuracy float64   `bson:"range"` // расстояние
+	Location geo.Point `bson:"location"` // координаты
+	Accuracy float64   `bson:"range"`    // расстояние
 }
 
 var (
