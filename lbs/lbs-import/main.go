@@ -179,7 +179,7 @@ func main() {
 		bulk.Upsert(key, bson.M{"$set": data})
 		counter++
 	}
-	fmt.Fprintf(os.Stderr, "\r")
+	fmt.Fprintln(os.Stderr, "")
 
 	if counter == 0 {
 		log.Println("No record for import. Exit...")
