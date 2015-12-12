@@ -86,12 +86,17 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 	if lbs.Records() == 0 {
 		log.Println("Warning! LBS DB is empty!")
 	}
+	lbsGoogle, err := geolocate.New(geolocate.Google, "AIzaSyBDw1oDEngRh098SlWFKWDJ5k7BFrfX_WI")
+	if err != nil {
+		return err
+	}
 	nce.Subscribe(serviceNameLBS, func(_, reply string, req geolocate.Request) {
 		log.Println("LBS:", req)
-		resp, err := lbs.Get(req)
+		resp, err := lbs.Get(req) // оставил для сохранения в базу запроса.
 		if err != nil {
 			log.Println("LBS error:", err)
 		}
+		resp, err = lbsGoogle.Get(req)
 		if err := nce.Publish(reply, resp); err != nil {
 			log.Println("LBS reply error:", err)
 		}
