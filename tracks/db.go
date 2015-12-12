@@ -82,6 +82,7 @@ type Track struct {
 	ID       bson.ObjectId `bson:"_id"` // уникальный идентификатор
 	Time     time.Time     // временная метка
 	Location geo.Point     // координаты точки
+	Accuracy float64       // погрешность кооржинат в метрах
 	Method   uint8         // тип полученных координат: GPS, LBS, WiFi и так далее
 }
 
