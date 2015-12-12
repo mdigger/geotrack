@@ -98,7 +98,7 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 		}
 		resp, err = lbsGoogle.Get(req)
 		if err := nce.Publish(reply, resp); err != nil {
-			log.Println("LBS reply error:", err)
+			log.Println("LBS reply error:", err, resp)
 		}
 	})
 
@@ -115,7 +115,7 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 			log.Println("UBLOX error:", err)
 		}
 		if err := nce.Publish(reply, data); err != nil {
-			log.Println("UBLOX reply error:", err)
+			log.Println("UBLOX reply error:", err, data)
 		}
 	})
 
@@ -134,7 +134,7 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 			log.Println("Error getting group of users:", err)
 		}
 		if err := nce.Publish(reply, group); err != nil {
-			log.Println("IMEI reply error:", err)
+			log.Println("IMEI reply error:", err, group)
 		}
 	})
 
@@ -146,7 +146,7 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 	nce.Subscribe(serviceNameTracks, func(tracks []tracks.TrackData) {
 		log.Printf("TRACK: %v", tracks)
 		if err := tracksDB.Add(tracks...); err != nil {
-			log.Println("Error TrackDB Add:", err)
+			log.Println("Error TrackDB Add:", err, tracks)
 		}
 	})
 
@@ -158,7 +158,7 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 	nce.Subscribe(serviceNameSensors, func(sensors []sensors.SensorData) {
 		log.Printf("SENSORS: %v", sensors)
 		if err := sensorsDB.Add(sensors...); err != nil {
-			log.Println("Error SensorDB Add:", err)
+			log.Println("Error SensorDB Add:", err, sensors)
 		}
 	})
 
