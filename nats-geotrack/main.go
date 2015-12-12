@@ -97,6 +97,9 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 			log.Println("LBS error:", err)
 		}
 		resp, err = lbsGoogle.Get(req)
+		if err != nil {
+			log.Println("LBS Google error:", err)
+		}
 		if err := nce.Publish(reply, resp); err != nil {
 			log.Println("LBS reply error:", err, resp)
 		}
