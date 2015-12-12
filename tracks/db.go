@@ -84,10 +84,11 @@ type Track struct {
 	Location geo.Point     // координаты точки
 	Accuracy float64       // погрешность кооржинат в метрах
 	Method   uint8         // тип полученных координат: GPS, LBS, WiFi и так далее
+	Power    uint8         // уровень заряда
 }
 
 // selector описывает список выбираемых полей
-var selector = bson.M{"time": 1, "location": 1, "method": 1}
+var selector = bson.M{"groupid": 0, "deviceid": 0}
 
 // Get возвращает список треков для указанного устройства.
 //
