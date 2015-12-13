@@ -16,7 +16,7 @@ import (
 var (
 	// RequestTimeout описывает время ожидания от сервера, которое используется при инициализации
 	// клиента.
-	RequestTimeout = time.Second * 5
+	RequestTimeout = time.Second * 10
 	// Servers описывает список серверов для запросов данных.
 	Servers = []string{
 		"http://online-live1.services.u-blox.com/GetOnlineData.ashx",
