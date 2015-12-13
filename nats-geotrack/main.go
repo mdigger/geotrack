@@ -92,14 +92,15 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 	}
 	nce.Subscribe(serviceNameLBS, func(_, reply string, req geolocate.Request) {
 		log.Println("LBS:", req)
-		resp, err := lbs.Get(req) // оставил для сохранения в базу запроса.
+		_, err := lbs.Get(req) // оставил для сохранения в базу запроса.
 		if err != nil {
 			log.Println("LBS error:", err)
 		}
-		resp, err = lbsGoogle.Get(req)
+		resp, err := lbsGoogle.Get(req)
 		if err != nil {
 			log.Println("LBS Google error:", err)
 		}
+		log.Printf("LBS Google Response: %+v", resp)
 		if err := nce.Publish(reply, resp); err != nil {
 			log.Println("LBS reply error:", err, resp)
 		}
