@@ -34,7 +34,7 @@ func InitCache(mdb *mongo.DB, token string) (cache *Cache, err error) {
 	}
 	coll := mdb.GetCollection(CollectionName)
 	defer mdb.FreeCollection(coll)
-	if err = coll.EnsureIndexKey("profile", "$2dsphere:point"); err != nil {
+	if err = coll.EnsureIndexKey("profile", "$2dsphere:location"); err != nil {
 		return
 	}
 	if err = coll.EnsureIndex(mgo.Index{
@@ -48,10 +48,10 @@ func InitCache(mdb *mongo.DB, token string) (cache *Cache, err error) {
 
 // storeData описывает формат данных для хранения.
 type storeData struct {
-	Profile           // профиль
-	Point   geo.Point // координаты
-	Data    []byte    // содержимое ответа
-	Time    time.Time // временная метка
+	Profile            // профиль
+	Location geo.Point // координаты
+	Data     []byte    // содержимое ответа
+	Time     time.Time // временная метка
 }
 
 // Get возвращает данные эфемерид для указанной точки. Данные возвращаются из кеша, если
@@ -65,10 +65,11 @@ func (c *Cache) Get(point geo.Point, profile Profile) (data []byte, err error) {
 	}
 	search := bson.M{
 		"profile": profile,
-		"point": bson.M{
-			"$nearSphere":  point,
-			"$maxDistance": MaxDistance,
+		"location": bson.D{ // важен порядок следования элементов запроса или может быть ошибка!
+			{"$nearSphere", point},
+			{"$maxDistance", MaxDistance},
 		}}
+	// pretty.Println(search)
 	err = coll.Find(search).Select(bson.M{"data": 1, "_id": 0}).One(&cacheData)
 	switch err {
 	case nil: // данные получены из кеша
@@ -86,10 +87,10 @@ func (c *Cache) Get(point geo.Point, profile Profile) (data []byte, err error) {
 	}
 	// сохраняем ответ в хранилище
 	err = coll.Insert(&storeData{
-		Profile: profile,
-		Point:   point,
-		Data:    data,
-		Time:    time.Now(),
+		Profile:  profile,
+		Location: point,
+		Data:     data,
+		Time:     time.Now(),
 	})
 	return
 }
