@@ -2,7 +2,6 @@ package users
 
 import (
 	"fmt"
-	"log"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -17,7 +16,6 @@ func (db *DB) GetSampleGroupID() string {
 	}
 	// наполняем тестовыми данными
 	if group == nil {
-		log.Println("USERS: Generating sample users...")
 		for i := 0; i < 5; i++ {
 			password, err := bcrypt.GenerateFromPassword(
 				[]byte(fmt.Sprintf("password%d", i+1)), bcrypt.DefaultCost)

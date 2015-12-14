@@ -23,6 +23,11 @@ func Connect(url string) (db *DB, err error) {
 		session: session,
 		dbname:  dialInfo.Database,
 	}
+	// инициализируем индекс для автоматического удаления логов
+	err = session.DB("").C(CollectionName).EnsureIndex(mgo.Index{
+		Key:         []string{"time"},
+		ExpireAfter: ExpireAfter,
+	})
 	return
 }
 

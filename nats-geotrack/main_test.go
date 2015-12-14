@@ -1,11 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"testing"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/mdigger/geolocate"
 	"github.com/mdigger/geotrack/geo"
 	"github.com/mdigger/geotrack/lbs/parser"
@@ -16,32 +15,44 @@ import (
 	"github.com/nats-io/nats"
 )
 
+func init() {
+	// Log as JSON instead of the default ASCII formatter.
+	// log.SetFormatter(&log.JSONFormatter{})
+	// Output to stderr instead of stdout, could also be a file.
+	// log.SetOutput(os.Stderr)
+	// Only log the warning severity or above.
+	// log.SetLevel(log.WarnLevel)
+}
+
 func TestSubscription(t *testing.T) {
-	log.Print("Connecting to MongoDB...")
+	log.SetLevel(log.DebugLevel) // отладка
+
+	log.WithField("url", "mongodb://localhost/watch").Info("Connecting to MongoDB...")
 	mdb, err := mongo.Connect("mongodb://localhost/watch")
 	if err != nil {
-		log.Println("Error connecting to MongoDB:", err)
+		log.WithError(err).Error("Error connecting to MongoDB")
 		return
 	}
 	defer mdb.Close()
+	log.AddHook(mdb) // добавляем запись логов в MongoDB
 
-	log.Println("Connecting to NATS...")
+	log.WithField("options", nats.DefaultOptions.Url).Info("Connecting to NATS...")
 	nc, err := nats.DefaultOptions.Connect()
 	if err != nil {
-		log.Println("Error connecting to NATS:", err)
+		log.WithError(err).Error("Error connecting to NATS")
 		return
 	}
 	defer nc.Close()
 
 	// запускаем подписку на получение данных и их обработку
 	if err := subscribe(mdb, nc); err != nil {
-		log.Println("Initializing error:", err)
+		log.WithError(err).Error("Error initializing NATS subscription")
 		return
 	}
 
 	nce, err := nats.NewEncodedConn(nc, nats.JSON_ENCODER)
 	if err != nil {
-		t.Fatal(err)
+		log.WithError(err).Fatal("Error initializing NATS encoder")
 	}
 
 	var (
@@ -51,39 +62,32 @@ func TestSubscription(t *testing.T) {
 		groupID  = users.SampleGroupID
 	)
 	{
-		fmt.Println("LBS Request")
 		req, err := parser.ParseLBS("gsm", `3D867293-13007-022970357-fa-2-1e3f-57f5-8b-1e3f-9b10-8a-1e3f-5100-79-1e3f-b6a6-78-1e3f-6aaa-78-1e3f-57f6-77-1e3f-5103-72`)
 		if err != nil {
-			t.Fatal(err)
+			log.WithError(err).Fatal("LBS Parse")
 		}
 		var data geolocate.Response
 		err = nce.Request(serviceNameLBS, *req, &data, timemout)
 		if err != nil {
-			t.Fatal(err)
+			log.WithError(err).Fatal("LBS Request")
 		}
-		fmt.Printf("LBS Response: %v\n", data)
 	}
 	{
-		fmt.Println("UBLOX Request")
 		var data []byte
 		err = nce.Request(serviceNameUblox, point, &data, timemout)
 		if err != nil {
-			t.Fatal(err)
+			log.WithError(err).Fatal("UBLOX Request")
 		}
-		fmt.Printf("UBLOX Response: %d data length\n", len(data))
 	}
 	{
-		fmt.Println("IMEI Request")
 		var data users.GroupInfo
 		err = nce.Request(serviceNameIMEI, deviceID, &data, timemout)
 		if err != nil {
-			t.Fatal(err)
+			log.WithError(err).Fatal("IMEI Request")
 		}
-		fmt.Printf("IMEI Response: %v\n", data)
 		groupID = data.GroupID
 	}
 	{
-		fmt.Println("TRACK publish")
 		var data = tracks.TrackData{
 			GroupID:  groupID,
 			DeviceID: deviceID,
@@ -92,11 +96,10 @@ func TestSubscription(t *testing.T) {
 		}
 		err = nce.Publish(serviceNameTracks, []tracks.TrackData{data})
 		if err != nil {
-			t.Fatal(err)
+			log.WithError(err).Fatal("TRACKS publishing")
 		}
 	}
 	{
-		fmt.Println("SENSOR publish")
 		var data = sensors.SensorData{
 			GroupID:  groupID,
 			DeviceID: deviceID,
@@ -109,32 +112,30 @@ func TestSubscription(t *testing.T) {
 		}
 		err = nce.Publish(serviceNameSensors, []sensors.SensorData{data})
 		if err != nil {
-			t.Fatal(err)
+			log.WithError(err).Fatal("SENSORS publishing")
 		}
 	}
 	{
-		fmt.Println("PAIRING Request")
 		var key string
 		err = nce.Request(serviceNamePairing, deviceID, &key, timemout)
 		if err != nil {
-			t.Fatal(err)
+			log.WithError(err).Fatal("PAIRING Request")
 		}
 		if key == "" {
-			t.Error("bad device pairing key")
+			log.Fatal("empty key")
 		}
 
 		var newDeviceID string
 		err = nce.Request(serviceNamePairingKey, key, &newDeviceID, timemout)
 		if err != nil {
-			t.Fatal(err)
+			log.WithError(err).Fatal("PAIRING KEY Request")
 		}
 		if newDeviceID == "" {
-			t.Error("bad device pairing deviceid")
+			log.Fatal("bad device pairing deviceid")
 		}
 		if newDeviceID != deviceID {
-			t.Error("bad device pairing")
+			log.Fatal("bad device pairing")
 		}
-		fmt.Printf("PAIRING Response: %v = %v\n", newDeviceID, key)
 	}
 
 	time.Sleep(time.Second * 5) // ожидаем обработки, иначе не успеет

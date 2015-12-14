@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"strings"
@@ -70,7 +69,6 @@ func (c *Client) GetOnline(point geo.Point, profile Profile) ([]byte, error) {
 repeatOnTimeout:
 	// формируем URL запроса
 	reqURL := fmt.Sprintf("%s?%s", Servers[n], query.String())
-	log.Println("UBLOX:", reqURL)     // выводим в лог URL запроса
 	resp, err := c.client.Get(reqURL) // осуществляем запрос к серверу на получение данных
 	if err != nil {
 		// проверяем, что ошибка таймаута получения данных
@@ -84,7 +82,6 @@ repeatOnTimeout:
 	}
 	defer resp.Body.Close()
 	// TODO: нужно ли проверять HTTP-коды ответов
-	log.Printf("UBLOX: %s [%d bytes]", resp.Status, resp.ContentLength)
 	// читаем и возвращаем данные ответа
 	return ioutil.ReadAll(resp.Body)
 }

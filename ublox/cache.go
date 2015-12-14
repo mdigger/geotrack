@@ -1,7 +1,6 @@
 package ublox
 
 import (
-	"log"
 	"time"
 
 	"github.com/mdigger/geotrack/geo"
@@ -72,12 +71,10 @@ func (c *Cache) Get(point geo.Point, profile Profile) (data []byte, err error) {
 	err = coll.Find(search).Select(bson.M{"data": 1, "_id": 0}).One(&cacheData)
 	switch err {
 	case nil: // данные получены из кеша
-		log.Printf("UBLOX: %v from cache", point)
 		data = cacheData.Data
 		return
 	case mgo.ErrNotFound: // данные в кэше не найдены - запрашиваем у сервера
 	default: // ошибка получения данных
-		log.Println("UBLOX cache error:", err)
 	}
 	// в кеше ничего не нашли... нужно запрашивать.
 	data, err = c.client.GetOnline(point, profile)
