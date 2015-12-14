@@ -90,13 +90,12 @@ func main() {
 	apiV1Sec.Put("/places/:place-id", putPlace)       // изменяет определение места
 	apiV1Sec.Delete("/places/:place-id", deletePlace) // удаляет определение места
 
-	apiV1Sec.Get("/devices", getDevices)                          // возвращает список устройств
-	apiV1Sec.Get("/devices/:device-id", getDeviceCurrent)         // возвращает последнюю точку трекинга устройства
-	apiV1Sec.Post("/devices/:device-id", postDeviceHistory)       // добавляет данные о треках устройства
-	apiV1Sec.Get("/devices/:device-id/history", getDeviceHistory) // возвращает список треков устройства
+	apiV1Sec.Get("/devices", getDevices)                    // возвращает список устройств
+	apiV1Sec.Get("/devices/:device-id/tracks", getTracks)   // возвращает список трекингов устройства
+	apiV1Sec.Post("/devices/:device-id/tracks", postTracks) // добавляет данные о треках устройства
 
-	apiV1Sec.Post("/register/:push-type", postRegister)            // регистрирует устройство для отправки push-сообщений
-	apiV1Sec.Delete("/register/:push-type/:token", deleteRegister) // удаляет токен из хранилища
+	apiV1Sec.Post("/push/:push-type", postRegister)            // регистрирует устройство для отправки push-сообщений
+	apiV1Sec.Delete("/push/:push-type/:token", deleteRegister) // удаляет токен из хранилища
 
 	llog.Info("Starting HTTP server at %q...", *addr)
 	e.Run(*addr)
