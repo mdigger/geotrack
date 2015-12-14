@@ -25,7 +25,10 @@ const (
 	serviceNameSensors = "sensor"
 )
 
-var ubloxToken = "I6KKO4RU_U2DclBM9GVyrA"
+var (
+	ubloxToken  = "I6KKO4RU_U2DclBM9GVyrA"
+	ggogleToken = "AIzaSyBDw1oDEngRh098SlWFKWDJ5k7BFrfX_WI"
+)
 
 func main() {
 	mongoURL := flag.String("mongodb", "mongodb://localhost/watch", "MongoDB connection URL")
@@ -86,16 +89,12 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 	if lbs.Records() == 0 {
 		log.Println("Warning! LBS DB is empty!")
 	}
-	lbsGoogle, err := geolocate.New(geolocate.Google, "AIzaSyBDw1oDEngRh098SlWFKWDJ5k7BFrfX_WI")
+	lbsGoogle, err := geolocate.New(geolocate.Google, googleToken)
 	if err != nil {
 		return err
 	}
 	nce.Subscribe(serviceNameLBS, func(_, reply string, req geolocate.Request) {
 		log.Println("LBS:", req)
-		_, err := lbs.Get(req) // оставил для сохранения в базу запроса.
-		if err != nil {
-			log.Println("LBS error:", err)
-		}
 		resp, err := lbsGoogle.Get(req)
 		if err != nil {
 			log.Println("LBS Google error:", err)
@@ -103,6 +102,10 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 		log.Printf("LBS Google Response: %+v", resp)
 		if err := nce.Publish(reply, resp); err != nil {
 			log.Println("LBS reply error:", err, resp)
+		}
+		_, err := lbs.Get(req) // оставил для сохранения в базу запроса.
+		if err != nil {
+			log.Println("LBS internal error:", err)
 		}
 	})
 
