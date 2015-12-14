@@ -45,10 +45,11 @@ func postSensors(c *echo.Context) error {
 		sensor.GroupID = groupID
 		sensors[i] = sensor
 	}
-	// TODO: пропустить через NATS, а не на прямую в базу
-	err = sensorsDB.Add(sensors...)
+	// пропускаем через NATS, а не на прямую в базу
+	err = nce.Publish(serviceNameSensors, sensors)
+	// err = sensorsDB.Add(sensors...)
 	if err != nil {
-		llog.Error("tracksDB error: %v", err)
+		llog.Error("sensors NATS publishing error: %v", err)
 		return err
 	}
 	return c.NoContent(http.StatusOK)

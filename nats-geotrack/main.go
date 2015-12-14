@@ -19,12 +19,13 @@ import (
 )
 
 const (
-	serviceNameLBS     = "lbs"
-	serviceNameUblox   = "ublox"
-	serviceNameIMEI    = "imei"
-	serviceNameTracks  = "track"
-	serviceNameSensors = "sensor"
-	serviceNamePairing = "pairing"
+	serviceNameLBS        = "lbs"
+	serviceNameUblox      = "ublox"
+	serviceNameIMEI       = "imei"
+	serviceNameTracks     = "track"
+	serviceNameSensors    = "sensor"
+	serviceNamePairing    = "pairing"
+	serviceNamePairingKey = "pairing.key"
 )
 
 var (
@@ -178,6 +179,13 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 		log.Printf("PAIRING: %v = %q", deviceID, key)
 		if err := nce.Publish(reply, key); err != nil {
 			log.Printf("PAIRING reply error: %v [%+v]", err, key)
+		}
+	})
+	nce.Subscribe(serviceNamePairingKey, func(_, reply, key string) {
+		newDeviceID := pairs.GetDeviceID(key)
+		log.Printf("PAIRING KEY: %v = %q", key, newDeviceID)
+		if err := nce.Publish(reply, newDeviceID); err != nil {
+			log.Printf("PAIRING KEY reply error: %v [%+v]", err, newDeviceID)
 		}
 	})
 

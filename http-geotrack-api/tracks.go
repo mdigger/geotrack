@@ -10,7 +10,9 @@ import (
 )
 
 const (
-	listLimit = 200 // лимит при отдаче списка треков
+	listLimit          = 200 // лимит при отдаче списка треков
+	serviceNameTracks  = "track"
+	serviceNameSensors = "sensor"
 )
 
 // getTracks отдает всю историю с координатами трекинга браслета, разбивая ее на порции.
@@ -49,10 +51,11 @@ func postTracks(c *echo.Context) error {
 		track.GroupID = groupID
 		tracks[i] = track
 	}
-	// TODO: пропустить через NATS, а не на прямую в базу
-	err = tracksDB.Add(tracks...)
+	// пропускаем через NATS, а не на прямую в базу
+	err = nce.Publish(serviceNameTracks, tracks)
+	// err = tracksDB.Add(tracks...)
 	if err != nil {
-		llog.Error("tracksDB error: %v", err)
+		llog.Error("tracks NATS publishing error: %v", err)
 		return err
 	}
 	return c.NoContent(http.StatusOK)

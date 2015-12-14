@@ -89,7 +89,7 @@ func (p *Pairs) Generate(deviceID string) (key string) {
 // найдено или ключ просрочен, то возвращается пустая строка.
 func (p *Pairs) GetDeviceID(key string) (deviceID string) {
 	p.mu.Lock()
-	if kInfo, ok := p.devices[key]; ok {
+	if kInfo, ok := p.keys[key]; ok {
 		delete(p.keys, kInfo.Key)
 		delete(p.devices, kInfo.DeviceID)
 		if time.Since(kInfo.Time) < KeyExpired {

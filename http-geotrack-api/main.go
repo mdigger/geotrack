@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 	"os"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/mdigger/geotrack/token"
 	"github.com/mdigger/geotrack/tracks"
 	"github.com/mdigger/geotrack/users"
+	"github.com/nats-io/nats"
 )
 
 var (
@@ -24,19 +26,23 @@ var (
 	sensorsDB   *sensors.DB           // хранилище сенсоров
 	groupID     = users.SampleGroupID // уникальный идентификатор группы
 	tokenEngine *token.Engine         // генератор токенов
+	nce         *nats.EncodedConn     // соединение с NATS
 	llog        *logger.Logger        // вывод информации в лог
 )
 
 func main() {
 	addr := flag.String("http", ":8080", "Server address & port")
 	mongoURL := flag.String("mongodb", "mongodb://localhost/watch", "MongoDB connection URL")
+	natsURL := flag.String("nats", nats.DefaultURL, "NATS connection URL")
 	docker := flag.Bool("docker", false, "for docker")
 	flag.Parse()
 
 	// Если запускается внутри контейнера
 	if *docker {
-		tmp := os.Getenv("MONGODB")
-		mongoURL = &tmp
+		tmp1 := os.Getenv("NATSADDR")
+		tmp2 := os.Getenv("MONGODB")
+		natsURL = &tmp1
+		mongoURL = &tmp2
 	}
 
 	e = echo.New()     // инициализируем HTTP-обработку
@@ -70,6 +76,19 @@ func main() {
 	}
 	groupID = usersDB.GetSampleGroupID() // временная инициализация пользователей
 
+	log.Println("Connecting to NATS...")
+	nc, err := nats.Connect(*natsURL)
+	if err != nil {
+		log.Printf("Error connecting to NATS: %v", err)
+		return
+	}
+	defer nc.Close()
+	nce, err = nats.NewEncodedConn(nc, nats.JSON_ENCODER)
+	if err != nil {
+		log.Printf("Error initializing NATS encoder: %v", err)
+		return
+	}
+
 	// инициализируем работу с токенами
 	tokenEngine, err = token.Init("com.xyzrd.geotracker", time.Minute*30, nil)
 	if err != nil {
@@ -97,6 +116,8 @@ func main() {
 	apiV1Sec.Delete("/places/:place-id", deletePlace) // удаляет определение места
 
 	apiV1Sec.Get("/devices", getDevices)                      // возвращает список устройств
+	apiV1Sec.Post("/devices", postDevicePairing)              // привязка устройства к группе
+	apiV1Sec.Post("/devices/:device-id", postDevicePairing)   // привязка устройства к группе
 	apiV1Sec.Get("/devices/:device-id/tracks", getTracks)     // возвращает список трекингов устройства
 	apiV1Sec.Post("/devices/:device-id/tracks", postTracks)   // добавляет данные о треках устройства
 	apiV1Sec.Get("/devices/:device-id/sensors", getSensors)   // возвращает список трекингов устройства

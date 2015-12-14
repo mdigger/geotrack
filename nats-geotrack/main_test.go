@@ -114,12 +114,27 @@ func TestSubscription(t *testing.T) {
 	}
 	{
 		fmt.Println("PAIRING Request")
-		var data string
-		err = nce.Request(serviceNamePairing, deviceID, &data, timemout)
+		var key string
+		err = nce.Request(serviceNamePairing, deviceID, &key, timemout)
 		if err != nil {
 			t.Fatal(err)
 		}
-		fmt.Printf("PAIRING Response: %v\n", data)
+		if key == "" {
+			t.Error("bad device pairing key")
+		}
+
+		var newDeviceID string
+		err = nce.Request(serviceNamePairingKey, key, &newDeviceID, timemout)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if newDeviceID == "" {
+			t.Error("bad device pairing deviceid")
+		}
+		if newDeviceID != deviceID {
+			t.Error("bad device pairing")
+		}
+		fmt.Printf("PAIRING Response: %v = %v\n", newDeviceID, key)
 	}
 
 	time.Sleep(time.Second * 5) // ожидаем обработки, иначе не успеет
