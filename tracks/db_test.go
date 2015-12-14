@@ -12,7 +12,6 @@ import (
 	"github.com/mdigger/geotrack/geo"
 	"github.com/mdigger/geotrack/mongo"
 	"github.com/mdigger/geotrack/users"
-
 	"gopkg.in/mgo.v2/bson"
 )
 

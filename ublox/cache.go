@@ -4,11 +4,10 @@ import (
 	"log"
 	"time"
 
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
-
 	"github.com/mdigger/geotrack/geo"
 	"github.com/mdigger/geotrack/mongo"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 var (

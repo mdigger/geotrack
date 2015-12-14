@@ -4,9 +4,8 @@ import (
 	"encoding/hex"
 	"net/http"
 
-	"gopkg.in/mgo.v2/bson"
-
 	"github.com/labstack/echo"
+	"gopkg.in/mgo.v2/bson"
 )
 
 // postRegister регистрирует устройство, чтобы на него можно было отсылать push-уведомления.

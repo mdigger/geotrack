@@ -1,14 +1,13 @@
 package mongo
 
 import (
+	"fmt"
 	"log"
 	"testing"
 	"time"
 
-	"gopkg.in/mgo.v2/bson"
-
-	"github.com/kr/pretty"
 	"github.com/mdigger/geotrack/geo"
+	"gopkg.in/mgo.v2/bson"
 )
 
 var MaxDistance float64 = 4900.0 / geo.EarthRadius // дистанция в радианах
@@ -53,5 +52,5 @@ func TestGeo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pretty.Println(data)
+	fmt.Println(data)
 }

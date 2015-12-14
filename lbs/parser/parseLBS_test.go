@@ -1,9 +1,8 @@
 package parser
 
 import (
+	"fmt"
 	"testing"
-
-	"github.com/kr/pretty"
 )
 
 func TestParser(t *testing.T) {
@@ -12,6 +11,6 @@ func TestParser(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		pretty.Println(data)
+		fmt.Println(data)
 	}
 }

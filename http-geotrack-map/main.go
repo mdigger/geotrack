@@ -8,15 +8,13 @@ import (
 	"net/http"
 	"os"
 
-	"gopkg.in/mgo.v2"
-
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-
 	"github.com/mdigger/geotrack/mongo"
 	"github.com/mdigger/geotrack/places"
 	"github.com/mdigger/geotrack/tracks"
 	"github.com/mdigger/geotrack/users"
+	"gopkg.in/mgo.v2"
 )
 
 var (

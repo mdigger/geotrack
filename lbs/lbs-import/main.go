@@ -10,11 +10,10 @@ import (
 	"strconv"
 	"strings"
 
-	"gopkg.in/mgo.v2/bson"
-
 	"github.com/mdigger/geotrack/geo"
 	"github.com/mdigger/geotrack/lbs"
 	"github.com/mdigger/geotrack/mongo"
+	"gopkg.in/mgo.v2/bson"
 )
 
 func main() {

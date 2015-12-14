@@ -1,9 +1,8 @@
 package geo
 
 import (
+	"fmt"
 	"testing"
-
-	"github.com/kr/pretty"
 )
 
 func TestCircle(t *testing.T) {
@@ -11,5 +10,5 @@ func TestCircle(t *testing.T) {
 		Center: NewPoint(37.57351, 55.715084),
 		Radius: 500,
 	}
-	pretty.Println(circle.Geo())
+	fmt.Println(circle.Geo())
 }
