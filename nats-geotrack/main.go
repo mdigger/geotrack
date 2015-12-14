@@ -10,6 +10,7 @@ import (
 	"github.com/mdigger/geotrack/geo"
 	"github.com/mdigger/geotrack/lbs"
 	"github.com/mdigger/geotrack/mongo"
+	"github.com/mdigger/geotrack/pairing"
 	"github.com/mdigger/geotrack/sensors"
 	"github.com/mdigger/geotrack/tracks"
 	"github.com/mdigger/geotrack/ublox"
@@ -23,11 +24,12 @@ const (
 	serviceNameIMEI    = "imei"
 	serviceNameTracks  = "track"
 	serviceNameSensors = "sensor"
+	serviceNamePairing = "pairing"
 )
 
 var (
 	ubloxToken  = "I6KKO4RU_U2DclBM9GVyrA"
-	ggogleToken = "AIzaSyBDw1oDEngRh098SlWFKWDJ5k7BFrfX_WI"
+	googleToken = "AIzaSyBDw1oDEngRh098SlWFKWDJ5k7BFrfX_WI"
 )
 
 func main() {
@@ -48,7 +50,7 @@ func main() {
 	log.Print("Connecting to MongoDB...")
 	mdb, err := mongo.Connect(*mongoURL)
 	if err != nil {
-		log.Println("Error connecting to MongoDB:", err)
+		log.Printf("Error connecting to MongoDB: %v", err)
 		return
 	}
 	defer mdb.Close()
@@ -56,14 +58,14 @@ func main() {
 	log.Println("Connecting to NATS...")
 	nc, err := nats.Connect(*natsURL)
 	if err != nil {
-		log.Println("Error connecting to NATS:", err)
+		log.Printf("Error connecting to NATS: %v", err)
 		return
 	}
 	defer nc.Close()
 
 	// запускаем подписку на получение данных и их обработку
 	if err := subscribe(mdb, nc); err != nil {
-		log.Println("Initializing error:", err)
+		log.Printf("Initializing error: %v", err)
 		return
 	}
 	// блокируем дальнейший код до получения одного из сигналов
@@ -94,18 +96,18 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 		return err
 	}
 	nce.Subscribe(serviceNameLBS, func(_, reply string, req geolocate.Request) {
-		log.Println("LBS:", req)
+		log.Printf("LBS:  %+v", req)
 		resp, err := lbsGoogle.Get(req)
 		if err != nil {
-			log.Println("LBS Google error:", err)
+			log.Printf("LBS Google error: %v", err)
 		}
 		log.Printf("LBS Google Response: %+v", resp)
 		if err := nce.Publish(reply, resp); err != nil {
-			log.Println("LBS reply error:", err, resp)
+			log.Printf("LBS reply error:  %v [%+v]", err, resp)
 		}
-		_, err := lbs.Get(req) // оставил для сохранения в базу запроса.
+		_, err = lbs.Get(req) // оставил для сохранения в базу запроса.
 		if err != nil {
-			log.Println("LBS internal error:", err)
+			log.Printf("LBS internal error: %v", err)
 		}
 	})
 
@@ -116,13 +118,13 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 	}
 	profile := ublox.DefaultProfile
 	nce.Subscribe(serviceNameUblox, func(_, reply string, point geo.Point) {
-		log.Println("UBLOX:", point)
+		log.Printf("UBLOX: %v", point)
 		data, err := ubloxCache.Get(point, profile)
 		if err != nil {
-			log.Println("UBLOX error:", err)
+			log.Printf("UBLOX error: %v", err)
 		}
 		if err := nce.Publish(reply, data); err != nil {
-			log.Println("UBLOX reply error:", err, data)
+			log.Printf("UBLOX reply error:  %v [%+v]", err, data)
 		}
 	})
 
@@ -135,13 +137,13 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 	// groupID := users.SampleGroupID
 	groupID := usersDB.GetSampleGroupID()
 	nce.Subscribe(serviceNameIMEI, func(_, reply, data string) {
-		log.Println("IMEI:", data)
+		log.Printf("IMEI: %v", data)
 		group, err := usersDB.GetGroup(groupID)
 		if err != nil {
-			log.Println("Error getting group of users:", err)
+			log.Printf("Error getting group of users: %v", err)
 		}
 		if err := nce.Publish(reply, group); err != nil {
-			log.Println("IMEI reply error:", err, group)
+			log.Printf("IMEI reply error: %v [%+v]", err, group)
 		}
 	})
 
@@ -153,7 +155,7 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 	nce.Subscribe(serviceNameTracks, func(tracks []tracks.TrackData) {
 		log.Printf("TRACK: %v", tracks)
 		if err := tracksDB.Add(tracks...); err != nil {
-			log.Println("Error TrackDB Add:", err, tracks)
+			log.Printf("Error TrackDB Add:  %v [%+v]", err, tracks)
 		}
 	})
 
@@ -165,7 +167,17 @@ func subscribe(mdb *mongo.DB, nc *nats.Conn) error {
 	nce.Subscribe(serviceNameSensors, func(sensors []sensors.SensorData) {
 		log.Printf("SENSORS: %v", sensors)
 		if err := sensorsDB.Add(sensors...); err != nil {
-			log.Println("Error SensorDB Add:", err, sensors)
+			log.Printf("Error SensorDB Add: %v [%+v]", err, sensors)
+		}
+	})
+
+	log.Println("Initializing Pairing subscription...")
+	var pairs pairing.Pairs
+	nce.Subscribe(serviceNamePairing, func(_, reply, deviceID string) {
+		key := pairs.Generate(deviceID)
+		log.Printf("PAIRING: %v = %q", deviceID, key)
+		if err := nce.Publish(reply, key); err != nil {
+			log.Printf("PAIRING reply error: %v [%+v]", err, key)
 		}
 	})
 

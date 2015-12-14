@@ -112,6 +112,15 @@ func TestSubscription(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	{
+		fmt.Println("PAIRING Request")
+		var data string
+		err = nce.Request(serviceNamePairing, deviceID, &data, timemout)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Printf("PAIRING Response: %v\n", data)
+	}
 
 	time.Sleep(time.Second * 5) // ожидаем обработки, иначе не успеет
 }
