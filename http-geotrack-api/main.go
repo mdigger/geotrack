@@ -10,6 +10,7 @@ import (
 	logger "github.com/labstack/gommon/log"
 	"github.com/mdigger/geotrack/mongo"
 	"github.com/mdigger/geotrack/places"
+	"github.com/mdigger/geotrack/sensors"
 	"github.com/mdigger/geotrack/token"
 	"github.com/mdigger/geotrack/tracks"
 	"github.com/mdigger/geotrack/users"
@@ -20,6 +21,7 @@ var (
 	usersDB     *users.DB             // хранилище пользователей
 	placesDB    *places.DB            // хранилище мест
 	tracksDB    *tracks.DB            // хранилище треков
+	sensorsDB   *sensors.DB           // хранилище сенсоров
 	groupID     = users.SampleGroupID // уникальный идентификатор группы
 	tokenEngine *token.Engine         // генератор токенов
 	llog        *logger.Logger        // вывод информации в лог
@@ -62,6 +64,10 @@ func main() {
 		llog.Error("Error initializing TracksDB: %v", err)
 		return
 	}
+	if sensorsDB, err = sensors.InitDB(mdb); err != nil {
+		llog.Error("Error initializing SensorsDB: %v", err)
+		return
+	}
 	groupID = usersDB.GetSampleGroupID() // временная инициализация пользователей
 
 	// инициализируем работу с токенами
@@ -90,9 +96,11 @@ func main() {
 	apiV1Sec.Put("/places/:place-id", putPlace)       // изменяет определение места
 	apiV1Sec.Delete("/places/:place-id", deletePlace) // удаляет определение места
 
-	apiV1Sec.Get("/devices", getDevices)                    // возвращает список устройств
-	apiV1Sec.Get("/devices/:device-id/tracks", getTracks)   // возвращает список трекингов устройства
-	apiV1Sec.Post("/devices/:device-id/tracks", postTracks) // добавляет данные о треках устройства
+	apiV1Sec.Get("/devices", getDevices)                      // возвращает список устройств
+	apiV1Sec.Get("/devices/:device-id/tracks", getTracks)     // возвращает список трекингов устройства
+	apiV1Sec.Post("/devices/:device-id/tracks", postTracks)   // добавляет данные о треках устройства
+	apiV1Sec.Get("/devices/:device-id/sensors", getSensors)   // возвращает список трекингов устройства
+	apiV1Sec.Post("/devices/:device-id/sensors", postSensors) // добавляет данные о треках устройства
 
 	apiV1Sec.Post("/push/:push-type", postRegister)            // регистрирует устройство для отправки push-сообщений
 	apiV1Sec.Delete("/push/:push-type/:token", deleteRegister) // удаляет токен из хранилища

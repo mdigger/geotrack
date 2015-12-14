@@ -5,16 +5,12 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo"
-	"github.com/mdigger/geotrack/tracks"
+	"github.com/mdigger/geotrack/sensors"
 	"gopkg.in/mgo.v2"
 )
 
-const (
-	listLimit = 200 // лимит при отдаче списка треков
-)
-
-// getTracks отдает всю историю с координатами трекинга браслета, разбивая ее на порции.
-func getTracks(c *echo.Context) error {
+// getSensors отдает список изменений сенсоров устройства.
+func getSensors(c *echo.Context) error {
 	groupID := c.Get("GroupID").(string)
 	deviceID := c.Param("device-id")
 	limit, err := strconv.ParseUint(c.Query("limit"), 10, 16)
@@ -23,7 +19,7 @@ func getTracks(c *echo.Context) error {
 	}
 	lastID := c.Query("last")
 	// запрашиваем список устройств постранично
-	tracks, err := tracksDB.Get(groupID, deviceID, int(limit), lastID)
+	sensors, err := sensorsDB.Get(groupID, deviceID, int(limit), lastID)
 	if err == mgo.ErrNotFound {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
@@ -31,26 +27,26 @@ func getTracks(c *echo.Context) error {
 		llog.Error("tracksDB error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
-	return c.JSON(http.StatusOK, tracks)
+	return c.JSON(http.StatusOK, sensors)
 }
 
-// postTracks добавляет новые данные треков устройства в хранилище.
-func postTracks(c *echo.Context) error {
+// postSensors добавляет новые данные о сенсорах устройства в хранилище.
+func postSensors(c *echo.Context) error {
 	groupID := c.Get("GroupID").(string)
 	deviceID := c.Param("device-id")
-	var tracks = make([]tracks.TrackData, 0)
-	err := c.Bind(&tracks)
+	var sensors = make([]sensors.SensorData, 0)
+	err := c.Bind(&sensors)
 	if err != nil || len(deviceID) < 12 {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 	// добавляем идентификатор группы и устройства
-	for i, track := range tracks {
-		track.DeviceID = deviceID
-		track.GroupID = groupID
-		tracks[i] = track
+	for i, sensor := range sensors {
+		sensor.DeviceID = deviceID
+		sensor.GroupID = groupID
+		sensors[i] = sensor
 	}
 	// TODO: пропустить через NATS, а не на прямую в базу
-	err = tracksDB.Add(tracks...)
+	err = sensorsDB.Add(sensors...)
 	if err != nil {
 		llog.Error("tracksDB error: %v", err)
 		return err
