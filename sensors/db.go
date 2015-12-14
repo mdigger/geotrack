@@ -3,10 +3,8 @@ package sensors
 import (
 	"time"
 
-	"gopkg.in/mgo.v2"
-
-	"github.com/kr/pretty"
 	"github.com/mdigger/geotrack/mongo"
+	"gopkg.in/mgo.v2"
 )
 
 var CollectionName = "sensors"
@@ -22,16 +20,14 @@ func InitDB(mdb *mongo.DB) (db *DB, err error) {
 	coll := mdb.GetCollection(CollectionName)
 	defer mdb.FreeCollection(coll)
 	if err = coll.EnsureIndex(mgo.Index{
-		Key: []string{"groupid", "deviceid", "time", "-_id"},
-		// Unique:      true,
-		// DropDups:    true,
+		Key:         []string{"time"},
 		ExpireAfter: ExpireAfter,
 	}); err != nil {
 		return
 	}
-	// if err = coll.EnsureIndexKey("groupid", "deviceid", "time", "-_id"); err != nil {
-	// 	return
-	// }
+	if err = coll.EnsureIndexKey("groupid", "deviceid", "-_id"); err != nil {
+		return
+	}
 	return
 }
 
@@ -54,8 +50,5 @@ func (db *DB) Add(sensors ...SensorData) (err error) {
 	coll := db.GetCollection(CollectionName)
 	err = coll.Insert(data...)
 	db.FreeCollection(coll)
-	if err != nil {
-		pretty.Println(err)
-	}
 	return
 }

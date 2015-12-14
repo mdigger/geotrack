@@ -5,7 +5,6 @@ import (
 
 	"github.com/mdigger/geotrack/geo"
 	"github.com/mdigger/geotrack/mongo"
-
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -37,16 +36,14 @@ func InitDB(mdb *mongo.DB) (db *DB, err error) {
 	coll := mdb.GetCollection(CollectionName)
 	defer mdb.FreeCollection(coll)
 	if err = coll.EnsureIndex(mgo.Index{
-		Key: []string{"groupid", "deviceid", "time", "-_id"},
-		// Unique:      true,
-		// DropDups:    true,
+		Key:         []string{"time"},
 		ExpireAfter: ExpireAfter,
 	}); err != nil {
 		return
 	}
-	// if err = coll.EnsureIndexKey("groupid", "deviceid", "time", "-_id"); err != nil {
-	// 	return
-	// }
+	if err = coll.EnsureIndexKey("groupid", "deviceid", "-_id"); err != nil {
+		return
+	}
 	return
 }
 
