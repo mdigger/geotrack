@@ -9,6 +9,8 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
+const serviceNameSensors = "device.sensor"
+
 // getSensors отдает список изменений сенсоров устройства.
 func getSensors(c *echo.Context) error {
 	groupID := c.Get("GroupID").(string)

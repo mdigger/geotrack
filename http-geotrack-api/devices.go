@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	serviceNamePairingKey = "pairing.key"
+	serviceNamePairingKey = "device.pair.key"
 	natsRequestTimeout    = time.Second * 10
 )
 

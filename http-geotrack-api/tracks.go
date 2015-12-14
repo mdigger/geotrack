@@ -10,9 +10,8 @@ import (
 )
 
 const (
-	listLimit          = 200 // лимит при отдаче списка треков
-	serviceNameTracks  = "track"
-	serviceNameSensors = "sensor"
+	listLimit         = 200 // лимит при отдаче списка треков
+	serviceNameTracks = "device.track"
 )
 
 // getTracks отдает всю историю с координатами трекинга браслета, разбивая ее на порции.
